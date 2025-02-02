@@ -6,12 +6,6 @@ import OnboardingForm from "./OnboardingForm"
 import LoadingScreen from "../../components/LoadingScreen"
 import toast from "react-hot-toast"
 
-type OnboardingData = {
-  name: string
-  email: string
-  password: string
-}
-
 export default function OnboardingPage() {
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
@@ -24,7 +18,7 @@ export default function OnboardingPage() {
     return () => clearTimeout(timer)
   }, [])
 
-  const handleOnboardingComplete = async (formData: OnboardingData) => {
+  const handleOnboardingComplete = async () => {
     try {
       // Simulating successful onboarding
       document.cookie = "hasCompletedOnboarding=true; path=/; max-age=31536000"

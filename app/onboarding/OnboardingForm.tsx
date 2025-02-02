@@ -39,7 +39,6 @@ const steps = [
   },
 ]
 
-
 export default function OnboardingForm({ onComplete }: OnboardingFormProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const [formData, setFormData] = useState({
@@ -155,7 +154,7 @@ export default function OnboardingForm({ onComplete }: OnboardingFormProps) {
             </Button>
             <Button
               onClick={currentStep === steps.length - 1 ? handleFinish : handleNext}
-              disabled={currentStep === steps.length - 1 && !formData.clinicName} 
+              disabled={currentStep === steps.length - 1 && !formData.clinicName}
             >
               {currentStep === steps.length - 1 ? "Finish" : "Next"}
             </Button>
