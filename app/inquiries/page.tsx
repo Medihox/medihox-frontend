@@ -175,20 +175,10 @@ export default function InquiriesPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-8 flex items-center">
           <div className="flex items-center gap-2">
             <FileSpreadsheet className="h-8 w-8 text-gray-700" />
             <h1 className="text-2xl font-bold text-gray-900">Inquiry List</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <Button variant="outline" className="gap-2">
-              <HelpCircle className="h-4 w-4" />
-              Help
-            </Button>
-            <div className="flex items-center gap-2">
-              <User2 className="h-5 w-5" />
-              <span className="font-medium">Super Admin</span>
-            </div>
           </div>
         </div>
 
