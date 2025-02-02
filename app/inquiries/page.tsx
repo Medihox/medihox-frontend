@@ -349,7 +349,7 @@ export default function InquiriesPage() {
             <select
               value={entriesPerPage}
               onChange={(e) => setEntriesPerPage(e.target.value)}
-              className="rounded border p-1"
+              className="rounded border p-1 text-white"
             >
               <option value="10">10</option>
               <option value="25">25</option>

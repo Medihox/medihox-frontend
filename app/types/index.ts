@@ -66,3 +66,14 @@ export interface User {
   createdAt: string;
   lastLogin?: string;
 }
+
+export interface Patient {
+  id: string;
+  name: string;
+  email: string;
+  role: Role;
+  permissions: Permissions;
+  status: 'active' | 'inactive';
+  createdAt: string;
+  lastLogin?: string;
+}
