@@ -21,14 +21,14 @@ import {
 import { FaClinicMedical } from "react-icons/fa";
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "Dashboard", href: "/" },
-  { icon: FileSpreadsheet, label: "Inquiries", href: "/inquiries" },
-  { icon: Calendar, label: "Appointments", href: "/appointments" },
-  { icon: UserCog, label: "Patients", href: "/patients" },
-  { icon: Users, label: "Users", href: "/users" },
-  { icon: Bell, label: "Notifications", href: "/notifications" },
-  { icon: PlusCircle, label: "Support", href: "/support" },
-  { icon: Settings, label: "Settings", href: "/settings" },
+  { icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard" },
+  { icon: FileSpreadsheet, label: "Inquiries", href: "/admin/inquiries" },
+  { icon: Calendar, label: "Appointments", href: "/admin/appointments" },
+  { icon: UserCog, label: "Patients", href: "/admin/patients" },
+  { icon: Users, label: "Users", href: "/admin/users" },
+  { icon: Bell, label: "Notifications", href: "/admin/notifications" },
+  { icon: PlusCircle, label: "Support", href: "/admin/support" },
+  { icon: Settings, label: "Settings", href: "/admin/settings" },
 ];
 
 export function Sidebar() {

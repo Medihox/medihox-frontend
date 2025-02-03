@@ -39,7 +39,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { exportToCSV, parseCSV } from "@/lib/csv";
-import { Inquiry } from "../types";
+import { Inquiry } from "../../types";
 import { cn } from "@/lib/utils";
 
 const mockData: Inquiry[] = [

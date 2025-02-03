@@ -1,6 +1,6 @@
 "use client";
-import Dashboard from "@/components/Dashboard";
+import AdminLogin from "./login/page";
 
 export default function Page() {
-  return <Dashboard />;
+  return <AdminLogin />;
 }

@@ -29,7 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { User, Role, Permission } from "../types";
+import { User, Role, Permission } from "../../types";
 
 const mockUsers: User[] = [
   {

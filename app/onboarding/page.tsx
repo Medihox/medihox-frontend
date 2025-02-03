@@ -25,7 +25,7 @@ export default function OnboardingPage() {
       document.cookie = "isAuthenticated=true; path=/; max-age=31536000"
       document.cookie = "userRole=ADMIN; path=/; max-age=31536000"
       toast.success("Onboarding completed successfully!")
-      router.push("/")
+      router.push("/admin/dashboard")
     } catch (error) {
       toast.error("Onboarding failed. Please try again.")
     }
