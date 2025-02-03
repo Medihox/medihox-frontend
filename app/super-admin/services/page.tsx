@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Card } from "@/components/ui/card";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 
 // Dummy services data
@@ -33,15 +34,22 @@ const services = [
     status: "active",
     clinics: 45,
   },
-  // Add more dummy services...
+  {
+    id: "2",
+    name: "Billing System",
+    description: "Automated invoicing and payment tracking",
+    price: 499,
+    status: "inactive",
+    clinics: 30,
+  },
 ];
 
 export default function ServicesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row justify-between mb-6 space-y-4 sm:space-y-0">
         <h1 className="text-2xl font-bold">Manage Services</h1>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -75,7 +83,8 @@ export default function ServicesPage() {
         </Dialog>
       </div>
 
-      <div className="rounded-md border">
+      {/* Table for Large Screens */}
+      <div className="hidden sm:block rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
@@ -113,6 +122,35 @@ export default function ServicesPage() {
             ))}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Mobile Card View */}
+      <div className="sm:hidden space-y-4">
+        {services.map((service) => (
+          <Card key={service.id} className="p-4 border">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold">{service.name}</h3>
+              <Badge variant={service.status === "active" ? "default" : "secondary"}>
+                {service.status}
+              </Badge>
+            </div>
+            <p className="text-sm text-gray-500">{service.description}</p>
+            <div className="mt-2 flex justify-between">
+              <span className="font-semibold text-lg">${service.price}</span>
+              <span className="text-sm text-gray-600">{service.clinics} Active Clinics</span>
+            </div>
+            <div className="mt-3 flex gap-2">
+              <Button variant="outline" size="sm" className="w-full">
+                <Pencil className="mr-1 h-4 w-4" />
+                Edit
+              </Button>
+              <Button variant="destructive" size="sm" className="w-full">
+                <Trash2 className="mr-1 h-4 w-4" />
+                Delete
+              </Button>
+            </div>
+          </Card>
+        ))}
       </div>
     </div>
   );

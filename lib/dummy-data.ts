@@ -3,7 +3,7 @@ import { Clinic, DashboardStats, User } from './types';
 export const dummyUser: User = {
   id: '1',
   email: 'admin@clinic.com',
-  name: 'John Doe',
+  name: 'Admin',
   userType: 'ADMIN',
   clinicId: '1',
 };
@@ -11,7 +11,7 @@ export const dummyUser: User = {
 export const dummySuperAdmin: User = {
   id: '2',
   email: 'super@clinic.com',
-  name: 'Jane Smith',
+  name: 'Super Admin',
   userType: 'SUPER_ADMIN',
 };
 

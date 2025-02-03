@@ -118,7 +118,7 @@ export function Sidebar() {
           >
             {/* Close Button */}
             <div className="p-4 flex justify-between items-center border-b">
-              <h2 className="text-xl font-semibold text-gray-900">Menu</h2>
+              <h2 className="text-xl font-semibold text-gray-900">Admin</h2>
               <button onClick={() => setMobileNavOpen(false)} className="p-1 rounded-lg hover:bg-gray-100">
                 <X className="h-6 w-6" />
               </button>
