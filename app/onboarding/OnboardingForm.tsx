@@ -98,7 +98,7 @@ export default function OnboardingForm({ onComplete }: OnboardingFormProps) {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: "100%", opacity: 0 }}
             transition={{ type: "tween", duration: 0.5 }}
-            className="lg:w-1/2 bg-[#4A90E2] text-white p-8 flex flex-col justify-center items-center"
+            className="lg:w-1/2 bg-[#36b19f] text-white p-8 flex flex-col justify-center items-center"
           >
             <motion.div
               initial={{ scale: 0 }}
@@ -119,7 +119,7 @@ export default function OnboardingForm({ onComplete }: OnboardingFormProps) {
                 <div key={index} className="flex flex-col items-center">
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      index <= currentStep ? "bg-[#4A90E2] text-white" : "bg-gray-200 text-gray-600"
+                      index <= currentStep ? "bg-[#36b19f] text-white" : "bg-gray-200 text-gray-600"
                     }`}
                   >
                     {index + 1}
@@ -130,7 +130,7 @@ export default function OnboardingForm({ onComplete }: OnboardingFormProps) {
             </div>
             <div className="mt-4 h-2 bg-gray-200 rounded-full">
               <motion.div
-                className="h-full bg-[#4A90E2] rounded-full"
+                className="h-full bg-[#36b19f] rounded-full"
                 initial={{ width: 0 }}
                 animate={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
                 transition={{ type: "tween", duration: 0.5 }}

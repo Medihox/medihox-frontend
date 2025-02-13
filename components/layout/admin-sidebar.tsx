@@ -19,6 +19,7 @@ import {
   X,
 } from "lucide-react";
 import { FaClinicMedical } from "react-icons/fa";
+import { useRouter } from "next/navigation";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard" },
@@ -36,6 +37,7 @@ export function Sidebar() {
   const [isMobile, setIsMobile] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
   // Detect if it's a mobile view
   useEffect(() => {
@@ -44,6 +46,13 @@ export function Sidebar() {
     window.addEventListener("resize", checkScreenSize);
     return () => window.removeEventListener("resize", checkScreenSize);
   }, []);
+
+
+  const handleLogout = () => {
+    // Perform any cleanup (e.g., clear local storage, auth tokens)
+    localStorage.removeItem("token"); // Example: Remove auth token
+    router.push("/login"); // Redirect to login page
+  };
 
   return (
     <>
@@ -88,7 +97,8 @@ export function Sidebar() {
 
           {/* Logout Button */}
           <div className="px-4 pb-4">
-            <button className="flex items-center gap-3 px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 transition-colors w-full">
+            <button onClick={handleLogout}
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 transition-colors w-full">
               <LogOut className="h-5 w-5" />
               {!collapsed && <span>Logout</span>}
             </button>

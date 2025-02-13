@@ -4,7 +4,7 @@ import { Heart } from "lucide-react"
 
 export default function LoadingScreen() {
   return (
-    <div className="fixed inset-0 bg-[#4A90E2] flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-[rgb(51,171,153)] flex items-center justify-center z-50">
       <div className="text-white text-center">
         <motion.div
           animate={{
