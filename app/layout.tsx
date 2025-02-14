@@ -28,7 +28,7 @@ export default function RootLayout({
         >
           <div className="relative min-h-screen">
             {/* Theme Toggle Positioned at Top-Right */}
-            <div className="absolute top-4 right-4 z-50">
+            <div className="absolute top-4 right-10 z-50">
               <ThemeToggle />
             </div>
 

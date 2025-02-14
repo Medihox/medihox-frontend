@@ -350,7 +350,6 @@ export default function AppointmentsPage() {
             </DialogContent>
           </Dialog>
         </div>
-
         <div className="rounded-lg bg-white shadow overflow-x-auto">
           <Table>
             <TableHeader>
