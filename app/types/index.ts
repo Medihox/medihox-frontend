@@ -15,14 +15,13 @@ export type InquiryCSV = Omit<Inquiry, 'id'>;
 
 export interface Appointment {
   id: string;
-  patientName: string;
-  patientEmail: string;
-  patientMobile: string;
+  patient: Patient;
   appointmentDate: string;
   appointmentTime: string;
-  doctor: string;
   service: string;
-  status: 'Scheduled' | 'Completed' | 'Cancelled' | 'No Show';
+  status:  'Scheduled' | 'Enquiry' | 'Completed' | 'Cancelled';
+  source: string;
+  createdBy: User;
   notes: string;
   createdAt: string;
 }
@@ -61,7 +60,6 @@ export interface User {
   name: string;
   email: string;
   role: Role;
-  permissions: Permissions;
   status: 'active' | 'inactive';
   createdAt: string;
   lastLogin?: string;
@@ -70,10 +68,12 @@ export interface User {
 export interface Patient {
   id: string;
   name: string;
-  email: string;
-  role: Role;
-  permissions: Permissions;
-  status: 'active' | 'inactive';
+  email?: string;
+  phoneNumber: string;
+  whatsappNumber?: string;
+  city?: string;
+  country?: string;
+  converted?: boolean;
+  createdById: User;
   createdAt: string;
-  lastLogin?: string;
-}
+};

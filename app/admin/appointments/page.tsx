@@ -31,57 +31,64 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Appointment } from "../../types";
 import { cn } from "@/lib/utils";
-
-const mockAppointments: Appointment[] = [
-  {
-    id: "1",
-    patientName: "John Doe",
-    patientEmail: "john@example.com",
-    patientMobile: "1234567890",
-    appointmentDate: "2024-01-25",
-    appointmentTime: "10:00",
-    doctor: "Dr. Smith",
-    service: "General Checkup",
-    status: "Scheduled",
-    notes: "First visit",
-    createdAt: "2024-01-20T10:00:00Z",
-  },
-];
+import { dummyAppointments } from "@/lib/dummy-data";
 
 export default function AppointmentsPage() {
-  const [appointments, setAppointments] = useState<Appointment[]>(mockAppointments);
+  const [appointments, setAppointments] =
+    useState<Appointment[]>(dummyAppointments);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(
-    null
-  );
+  const [editingAppointment, setEditingAppointment] =
+    useState<Appointment | null>(null);
   const [newAppointment, setNewAppointment] = useState<Partial<Appointment>>({
-    patientName: "",
-    patientEmail: "",
-    patientMobile: "",
+    patient: {
+      id: "",
+      name: "",
+      email: "",
+      phoneNumber: "",
+      converted: false,
+      role: "",
+      permissions: [],
+      status: "",
+      createdAt: new Date().toISOString(),
+    },
     appointmentDate: "",
     appointmentTime: "",
-    doctor: "",
     service: "",
     status: "Scheduled",
+    source: "",
+    createdBy: {
+      id: "",
+      name: "",
+      email: "",
+    },
     notes: "",
   });
 
   const handleAddAppointment = () => {
     const appointment: Appointment = {
-      ...newAppointment as Appointment,
+      ...(newAppointment as Appointment),
       id: (appointments.length + 1).toString(),
       createdAt: new Date().toISOString(),
     };
     setAppointments([...appointments, appointment]);
     setNewAppointment({
-      patientName: "",
-      patientEmail: "",
-      patientMobile: "",
+      patient: {
+        id: "",
+        name: "",
+        email: "",
+        phoneNumber: "",
+        converted: false,
+      },
       appointmentDate: "",
       appointmentTime: "",
-      doctor: "",
       service: "",
       status: "Scheduled",
+      source: "",
+      createdBy: {
+        id: "",
+        name: "",
+        email: "",
+      },
       notes: "",
     });
     setIsAddDialogOpen(false);
@@ -103,21 +110,32 @@ export default function AppointmentsPage() {
     setAppointments(updatedAppointments);
     setEditingAppointment(null);
     setNewAppointment({
-      patientName: "",
-      patientEmail: "",
-      patientMobile: "",
+      patient: {
+        id: "",
+        name: "",
+        email: "",
+        phoneNumber: "",
+        converted: false,
+      },
       appointmentDate: "",
       appointmentTime: "",
-      doctor: "",
       service: "",
       status: "Scheduled",
+      source: "",
+      createdBy: {
+        id: "",
+        name: "",
+        email: "",
+      },
       notes: "",
     });
     setIsAddDialogOpen(false);
   };
 
   const handleDeleteAppointment = (id: string) => {
-    setAppointments(appointments.filter((appointment) => appointment.id !== id));
+    setAppointments(
+      appointments.filter((appointment) => appointment.id !== id)
+    );
   };
 
   const getStatusColor = (status: Appointment["status"]) => {
@@ -128,7 +146,7 @@ export default function AppointmentsPage() {
         return "bg-green-500";
       case "Cancelled":
         return "bg-red-500";
-      case "No Show":
+      case "Enquiry":
         return "bg-yellow-500";
       default:
         return "bg-gray-500";
@@ -150,60 +168,76 @@ export default function AppointmentsPage() {
                 New Appointment
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
                   {editingAppointment ? "Edit Appointment" : "New Appointment"}
                 </DialogTitle>
               </DialogHeader>
               <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="patientName">Patient Name</Label>
-                  <Input
-                    id="patientName"
-                    value={newAppointment.patientName}
-                    onChange={(e) =>
-                      setNewAppointment({
-                        ...newAppointment,
-                        patientName: e.target.value,
-                      })
-                    }
-                  />
+                {/* Patient Details */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="patientName">Patient Name</Label>
+                    <Input
+                      id="patientName"
+                      value={newAppointment.patient?.name || ""}
+                      onChange={(e) =>
+                        setNewAppointment({
+                          ...newAppointment,
+                          patient: {
+                            ...newAppointment.patient,
+                            name: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="patientEmail">Email</Label>
+                    <Input
+                      id="patientEmail"
+                      type="email"
+                      value={newAppointment.patient?.email || ""}
+                      onChange={(e) =>
+                        setNewAppointment({
+                          ...newAppointment,
+                          patient: {
+                            ...newAppointment.patient,
+                            email: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </div>
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="patientEmail">Email</Label>
-                  <Input
-                    id="patientEmail"
-                    type="email"
-                    value={newAppointment.patientEmail}
-                    onChange={(e) =>
-                      setNewAppointment({
-                        ...newAppointment,
-                        patientEmail: e.target.value,
-                      })
-                    }
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="patientMobile">Mobile</Label>
+                    <Input
+                      id="patientMobile"
+                      value={newAppointment.patient?.phoneNumber || ""}
+                      onChange={(e) =>
+                        setNewAppointment({
+                          ...newAppointment,
+                          patient: {
+                            ...newAppointment.patient,
+                            phoneNumber: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </div>
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="patientMobile">Mobile</Label>
-                  <Input
-                    id="patientMobile"
-                    value={newAppointment.patientMobile}
-                    onChange={(e) =>
-                      setNewAppointment({
-                        ...newAppointment,
-                        patientMobile: e.target.value,
-                      })
-                    }
-                  />
-                </div>
+
+                {/* Appointment Date and Time */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="appointmentDate">Date</Label>
                     <Input
                       id="appointmentDate"
                       type="date"
-                      value={newAppointment.appointmentDate}
+                      value={newAppointment.appointmentDate || ""}
                       onChange={(e) =>
                         setNewAppointment({
                           ...newAppointment,
@@ -217,7 +251,7 @@ export default function AppointmentsPage() {
                     <Input
                       id="appointmentTime"
                       type="time"
-                      value={newAppointment.appointmentTime}
+                      value={newAppointment.appointmentTime || ""}
                       onChange={(e) =>
                         setNewAppointment({
                           ...newAppointment,
@@ -227,36 +261,42 @@ export default function AppointmentsPage() {
                     />
                   </div>
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="doctor">Doctor</Label>
-                  <Input
-                    id="doctor"
-                    value={newAppointment.doctor}
-                    onChange={(e) =>
-                      setNewAppointment({
-                        ...newAppointment,
-                        doctor: e.target.value,
-                      })
-                    }
-                  />
+
+                {/* Service and Source */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="service">Service</Label>
+                    <Input
+                      id="service"
+                      value={newAppointment.service || ""}
+                      onChange={(e) =>
+                        setNewAppointment({
+                          ...newAppointment,
+                          service: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="source">Source</Label>
+                    <Input
+                      id="source"
+                      value={newAppointment.source || ""}
+                      onChange={(e) =>
+                        setNewAppointment({
+                          ...newAppointment,
+                          source: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="service">Service</Label>
-                  <Input
-                    id="service"
-                    value={newAppointment.service}
-                    onChange={(e) =>
-                      setNewAppointment({
-                        ...newAppointment,
-                        service: e.target.value,
-                      })
-                    }
-                  />
-                </div>
+
+                {/* Status */}
                 <div className="grid gap-2">
                   <Label htmlFor="status">Status</Label>
                   <Select
-                    value={newAppointment.status}
+                    value={newAppointment.status || "Scheduled"}
                     onValueChange={(value: Appointment["status"]) =>
                       setNewAppointment({ ...newAppointment, status: value })
                     }
@@ -272,11 +312,13 @@ export default function AppointmentsPage() {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Notes */}
                 <div className="grid gap-2">
                   <Label htmlFor="notes">Notes</Label>
                   <Textarea
                     id="notes"
-                    value={newAppointment.notes}
+                    value={newAppointment.notes || ""}
                     onChange={(e) =>
                       setNewAppointment({
                         ...newAppointment,
@@ -286,7 +328,9 @@ export default function AppointmentsPage() {
                   />
                 </div>
               </div>
-              <div className="flex justify-end gap-3">
+
+              {/* Form Actions */}
+              <div className="flex justify-end gap-3 mt-4">
                 <Button
                   variant="outline"
                   onClick={() => setIsAddDialogOpen(false)}
@@ -307,33 +351,45 @@ export default function AppointmentsPage() {
           </Dialog>
         </div>
 
-        <div className="rounded-lg bg-white shadow">
+        <div className="rounded-lg bg-white shadow overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Patient Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Mobile</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Time</TableHead>
-                <TableHead>Doctor</TableHead>
-                <TableHead>Service</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Notes</TableHead>
-                <TableHead>Action</TableHead>
+                <TableHead className="min-w-[150px]">Patient Name</TableHead>
+                <TableHead className="min-w-[150px]">Email</TableHead>
+                <TableHead className="min-w-[120px]">Mobile</TableHead>
+                <TableHead className="min-w-[120px]">Date</TableHead>
+                <TableHead className="min-w-[120px]">Time</TableHead>
+                <TableHead className="min-w-[150px]">Service</TableHead>
+                <TableHead className="min-w-[120px]">Status</TableHead>
+                <TableHead className="min-w-[150px]">Source</TableHead>
+                <TableHead className="min-w-[150px]">Created By</TableHead>
+                <TableHead className="min-w-[200px]">Notes</TableHead>
+                <TableHead className="min-w-[120px]">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {appointments.map((appointment) => (
                 <TableRow key={appointment.id}>
-                  <TableCell>{appointment.patientName}</TableCell>
-                  <TableCell>{appointment.patientEmail}</TableCell>
-                  <TableCell>{appointment.patientMobile}</TableCell>
-                  <TableCell>{appointment.appointmentDate}</TableCell>
-                  <TableCell>{appointment.appointmentTime}</TableCell>
-                  <TableCell>{appointment.doctor}</TableCell>
-                  <TableCell>{appointment.service}</TableCell>
-                  <TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    {appointment.patient.name}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    {appointment.patient.email}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    {appointment.patient.phoneNumber}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    {appointment.appointmentDate}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    {appointment.appointmentTime}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    {appointment.service}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">
                     <Badge
                       className={cn(
                         "text-white",
@@ -343,8 +399,16 @@ export default function AppointmentsPage() {
                       {appointment.status}
                     </Badge>
                   </TableCell>
-                  <TableCell>{appointment.notes}</TableCell>
-                  <TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    {appointment.source}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    {appointment.createdBy.name}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap truncate">
+                    {appointment.notes}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">
                     <div className="flex gap-2">
                       <Button
                         variant="ghost"

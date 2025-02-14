@@ -21,136 +21,105 @@ import { Users as UsersIcon, UserPlus, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Patient, Role, Permission } from "../../types";
+import { Patient, User } from "../../types";
 
-const mockUsers: Patient[] = [
+const mockPatients: Patient[] = [
   {
     id: "1",
-    name: "John Admin",
-    email: "admin@example.com",
-    role: "admin",
-    permissions: {
-      users: { view: true, create: true, edit: true, delete: true },
-      appointments: { view: true, create: true, edit: true, delete: true },
-      inquiries: { view: true, create: true, edit: true, delete: true },
+    name: "John Doe",
+    email: "john@example.com",
+    phoneNumber: "1234567890",
+    whatsappNumber: "1234567890",
+    city: "New York",
+    country: "USA",
+    converted: false,
+    createdById: {
+      id: "u1",
+      name: "Dr. Smith",
+      email: "dr.smith@example.com",
+      role: "doctor",
+      status: "active",
+      createdAt: "2024-01-01T10:00:00Z",
     },
-    status: "active",
     createdAt: "2024-01-20T10:00:00Z",
-    lastLogin: "2024-01-25T15:30:00Z",
   },
 ];
 
-const roles: Role[] = ["admin", "doctor", "receptionist", "staff"];
-const modules = ["users", "appointments", "inquiries"] as const;
-
-export default function UsersPage() {
-  const [users, setUsers] = useState<Patient[]>(mockUsers);
+export default function PatientsPage() {
+  const [patients, setPatients] = useState<Patient[]>(mockPatients);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<Patient | null>(null);
-  const [newUser, setNewUser] = useState<Partial<Patient>>({
+  const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
+  const [newPatient, setNewPatient] = useState<Partial<Patient>>({
     name: "",
     email: "",
-    role: "staff",
-    permissions: {
-      users: { view: false, create: false, edit: false, delete: false },
-      appointments: { view: false, create: false, edit: false, delete: false },
-      inquiries: { view: false, create: false, edit: false, delete: false },
+    phoneNumber: "",
+    whatsappNumber: "",
+    city: "",
+    country: "",
+    converted: false,
+    createdById: {
+      id: "",
+      name: "",
+      email: "",
+      role: "",
+      status: "",
+      createdAt: "",
     },
-    status: "active",
   });
 
-  const handleAddUser = () => {
-    const user: Patient = {
-      ...newUser as Patient,
-      id: (users.length + 1).toString(),
+  const handleAddPatient = () => {
+    const patient: Patient = {
+      ...newPatient as Patient,
+      id: (patients.length + 1).toString(),
       createdAt: new Date().toISOString(),
     };
-    setUsers([...users, user]);
+    setPatients([...patients, patient]);
     resetForm();
   };
 
-  const handleEditUser = (user: Patient) => {
-    setEditingUser(user);
-    setNewUser(user);
+  const handleEditPatient = (patient: Patient) => {
+    setEditingPatient(patient);
+    setNewPatient(patient);
     setIsAddDialogOpen(true);
   };
 
-  const handleUpdateUser = () => {
-    if (!editingUser) return;
-    const updatedUsers = users.map((user) =>
-      user.id === editingUser.id ? { ...user, ...newUser } : user
+  const handleUpdatePatient = () => {
+    if (!editingPatient) return;
+    const updatedPatients = patients.map((patient) =>
+      patient.id === editingPatient.id ? { ...patient, ...newPatient } : patient
     );
-    setUsers(updatedUsers);
+    setPatients(updatedPatients);
     resetForm();
   };
 
-  const handleDeleteUser = (id: string) => {
-    setUsers(users.filter((user) => user.id !== id));
+  const handleDeletePatient = (id: string) => {
+    setPatients(patients.filter((patient) => patient.id !== id));
   };
 
   const resetForm = () => {
-    setEditingUser(null);
-    setNewUser({
+    setEditingPatient(null);
+    setNewPatient({
       name: "",
       email: "",
-      role: "staff",
-      permissions: {
-        users: { view: false, create: false, edit: false, delete: false },
-        appointments: { view: false, create: false, edit: false, delete: false },
-        inquiries: { view: false, create: false, edit: false, delete: false },
+      phoneNumber: "",
+      whatsappNumber: "",
+      city: "",
+      country: "",
+      converted: false,
+      createdById: {
+        id: "",
+        name: "",
+        email: "",
+        role: "",
+        permissions: [],
+        status: "",
+        createdAt: "",
       },
-      status: "active",
     });
     setIsAddDialogOpen(false);
   };
 
-  const handlePermissionChange = (
-    module: keyof Patient["permissions"],
-    action: keyof Permission,
-    checked: boolean
-  ) => {
-    setNewUser((prev) => ({
-      ...prev,
-      permissions: {
-        ...prev.permissions,
-        [module]: {
-          ...prev.permissions?.[module],
-          [action]: checked,
-        },
-      } as Patient["permissions"],
-    }));
-  };
-
-  const getStatusColor = (status: Patient["status"]) => {
-    return status === "active" ? "bg-green-500" : "bg-red-500";
-  };
-
-  const getRoleColor = (role: Role) => {
-    switch (role) {
-      case "admin":
-        return "bg-purple-500";
-      case "doctor":
-        return "bg-blue-500";
-      case "receptionist":
-        return "bg-green-500";
-      case "staff":
-        return "bg-yellow-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
-
-  function cn(...classes: string[]): string {
-    return classes.filter(Boolean).join(" ");
-  }
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="mx-auto max-w-7xl">
@@ -169,7 +138,7 @@ export default function UsersPage() {
             <DialogContent className="sm:max-w-[600px]">
               <DialogHeader>
                 <DialogTitle>
-                  {editingUser ? "Edit Patient" : "Add New Patient"}
+                  {editingPatient ? "Edit Patient" : "Add New Patient"}
                 </DialogTitle>
               </DialogHeader>
               <div className="grid gap-4 py-4">
@@ -178,9 +147,9 @@ export default function UsersPage() {
                     <Label htmlFor="name">Name</Label>
                     <Input
                       id="name"
-                      value={newUser.name}
+                      value={newPatient.name}
                       onChange={(e) =>
-                        setNewUser({ ...newUser, name: e.target.value })
+                        setNewPatient({ ...newPatient, name: e.target.value })
                       }
                     />
                   </div>
@@ -189,147 +158,113 @@ export default function UsersPage() {
                     <Input
                       id="email"
                       type="email"
-                      value={newUser.email}
+                      value={newPatient.email}
                       onChange={(e) =>
-                        setNewUser({ ...newUser, email: e.target.value })
+                        setNewPatient({ ...newPatient, email: e.target.value })
                       }
                     />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
-                    <Label htmlFor="role">Role</Label>
-                    <Select
-                      value={newUser.role}
-                      onValueChange={(value: Role) =>
-                        setNewUser({ ...newUser, role: value })
+                    <Label htmlFor="phoneNumber">Phone Number</Label>
+                    <Input
+                      id="phoneNumber"
+                      value={newPatient.phoneNumber}
+                      onChange={(e) =>
+                        setNewPatient({ ...newPatient, phoneNumber: e.target.value })
                       }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {roles.map((role) => (
-                          <SelectItem key={role} value={role}>
-                            {role.charAt(0).toUpperCase() + role.slice(1)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="status">Status</Label>
-                    <Select
-                      value={newUser.status}
-                      onValueChange={(value: Patient["status"]) =>
-                        setNewUser({ ...newUser, status: value })
+                    <Label htmlFor="whatsappNumber">WhatsApp Number</Label>
+                    <Input
+                      id="whatsappNumber"
+                      value={newPatient.whatsappNumber}
+                      onChange={(e) =>
+                        setNewPatient({ ...newPatient, whatsappNumber: e.target.value })
                       }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="inactive">Inactive</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    />
                   </div>
                 </div>
-                <div className="grid gap-4">
-                  <Label>Permissions</Label>
-                  <div className="space-y-4">
-                    {modules.map((module) => (
-                      <div key={module} className="space-y-2">
-                        <h3 className="font-medium capitalize">{module}</h3>
-                        <div className="flex gap-6">
-                          {["view", "create", "edit", "delete"].map((action) => (
-                            <div
-                              key={action}
-                              className="flex items-center gap-2"
-                            >
-                              <Checkbox
-                                id={`${module}-${action}`}
-                                checked={
-                                  newUser.permissions?.[module]?.[
-                                    action as keyof Permission
-                                  ] ?? false
-                                }
-                                onCheckedChange={(checked) =>
-                                  handlePermissionChange(
-                                    module,
-                                    action as keyof Permission,
-                                    checked as boolean
-                                  )
-                                }
-                              />
-                              <Label
-                                htmlFor={`${module}-${action}`}
-                                className="capitalize"
-                              >
-                                {action}
-                              </Label>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="city">City</Label>
+                    <Input
+                      id="city"
+                      value={newPatient.city}
+                      onChange={(e) =>
+                        setNewPatient({ ...newPatient, city: e.target.value })
+                      }
+                    />
                   </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="country">Country</Label>
+                    <Input
+                      id="country"
+                      value={newPatient.country}
+                      onChange={(e) =>
+                        setNewPatient({ ...newPatient, country: e.target.value })
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="converted">Converted</Label>
+                  <Checkbox
+                    id="converted"
+                    checked={newPatient.converted}
+                    onCheckedChange={(checked) =>
+                      setNewPatient({ ...newPatient, converted: checked as boolean })
+                    }
+                  />
                 </div>
               </div>
               <div className="flex justify-end gap-3">
                 <Button variant="outline" onClick={resetForm}>
                   Cancel
                 </Button>
-                <Button onClick={editingUser ? handleUpdateUser : handleAddUser}>
-                  {editingUser ? "Update" : "Add"}
+                <Button onClick={editingPatient ? handleUpdatePatient : handleAddPatient}>
+                  {editingPatient ? "Update" : "Add"}
                 </Button>
               </div>
             </DialogContent>
           </Dialog>
         </div>
 
-        <div className="rounded-lg bg-white shadow">
+        <div className="rounded-lg bg-white shadow overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Phone Number</TableHead>
+                <TableHead>WhatsApp Number</TableHead>
+                <TableHead>City</TableHead>
+                <TableHead>Country</TableHead>
+                <TableHead>Converted</TableHead>
+                <TableHead>Created By</TableHead>
                 <TableHead>Created At</TableHead>
-                <TableHead>Last Login</TableHead>
                 <TableHead>Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>{user.name}</TableCell>
-                  <TableCell>{user.email}</TableCell>
+              {patients.map((patient) => (
+                <TableRow key={patient.id}>
+                  <TableCell>{patient.name}</TableCell>
+                  <TableCell>{patient.email}</TableCell>
+                  <TableCell>{patient.phoneNumber}</TableCell>
+                  <TableCell>{patient.whatsappNumber}</TableCell>
+                  <TableCell>{patient.city}</TableCell>
+                  <TableCell>{patient.country}</TableCell>
                   <TableCell>
-                    <Badge
-                      className={cn("text-white", getRoleColor(user.role))}
-                    >
-                      {user.role}
+                    <Badge className={patient.converted ? "bg-green-500" : "bg-red-500"}>
+                      {patient.converted ? "Yes" : "No"}
                     </Badge>
                   </TableCell>
+                  <TableCell>{patient.createdById.name}</TableCell>
                   <TableCell>
-                    <Badge
-                      className={cn(
-                        "text-white",
-                        getStatusColor(user.status)
-                      )}
-                    >
-                      {user.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {new Date(user.createdAt).toLocaleString()}
-                  </TableCell>
-                  <TableCell>
-                    {user.lastLogin
-                      ? new Date(user.lastLogin).toLocaleString()
-                      : "Never"}
+                    {new Date(patient.createdAt).toLocaleString()}
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
@@ -337,7 +272,7 @@ export default function UsersPage() {
                         variant="ghost"
                         size="sm"
                         className="h-8 w-8 p-0"
-                        onClick={() => handleEditUser(user)}
+                        onClick={() => handleEditPatient(patient)}
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -345,7 +280,7 @@ export default function UsersPage() {
                         variant="ghost"
                         size="sm"
                         className="h-8 w-8 p-0"
-                        onClick={() => handleDeleteUser(user.id)}
+                        onClick={() => handleDeletePatient(patient.id)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
