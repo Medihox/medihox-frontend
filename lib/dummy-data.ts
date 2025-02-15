@@ -84,7 +84,16 @@ export const dummyAppointments: Appointment[] = [
       "name": "Amit Sharma",
       "email": "amit.sharma@example.com",
       "phoneNumber": "9876543210",
-      "converted": false
+      "converted": false,
+      "createdAt": "2023-01-01T00:00:00Z",
+      createdById: {
+        id: 'S1',
+        name: 'Dr. Talwar',
+        email: 'dr.talwar@example.com',
+        role: 'doctor',
+        status: 'active',
+        createdAt: '2023-01-01T00:00:00Z'
+      },
     },
     "appointmentDate": "2024-02-15",
     "appointmentTime": "09:30",
@@ -96,11 +105,11 @@ export const dummyAppointments: Appointment[] = [
       "name": "Dr. Talwar",
       "email": "dr.talwar@example.com",
       "role": "doctor",
-      "permissions": ["CREATE_APPOINTMENT", "VIEW_APPOINTMENT"],
-      "status": "Active",
+      "status": "active",
       "createdAt": "2023-01-01T00:00:00Z"
     },
-    "createdAt": "2024-02-10T09:00:00Z"
+    "createdAt": "2024-02-10T09:00:00Z",
+    "notes": ""
   },
   {
     "id": "2",
@@ -109,97 +118,31 @@ export const dummyAppointments: Appointment[] = [
       "name": "Priya Verma",
       "email": "priya.verma@example.com",
       "phoneNumber": "8765432109",
-      "converted": true
+      "converted": true,
+      "createdAt": "2023-01-01T00:00:00Z",
+      createdById: {
+        id: 'S1',
+        name: 'Dr. Talwar',
+        email: 'dr.talwar@example.com',
+        role: 'doctor',
+        status: 'active',
+        createdAt: '2023-01-01T00:00:00Z'
+      },
     },
     "appointmentDate": "2024-02-16",
     "appointmentTime": "11:00",
     "service": "Dental Cleaning",
     "status": "Completed",
     "source": "Walk-in",
+    "createdAt": "2023-01-01T00:00:00Z",
     "createdBy": {
-      "id": "S1",
-      "name": "Dr. Talwar",
-      "email": "dr.talwar@example.com",
-      "role": "Doctor",
-      "permissions": ["CREATE_APPOINTMENT", "VIEW_APPOINTMENT"],
-      "status": "Active",
-      "createdAt": "2023-01-01T00:00:00Z"
+      id: 'S1',
+      name: 'Dr. Talwar',
+      email: 'dr.talwar@example.com',
+      role: 'doctor',
+      status: 'active',
+      createdAt: '2023-01-01T00:00:00Z'
     },
-    "createdAt": "2024-02-10T10:30:00Z"
-  },
-  {
-    "id": "3",
-    "patient": {
-      "id": "p3",
-      "name": "Rajesh Kumar",
-      "email": "rajesh.kumar@example.com",
-      "phoneNumber": "7654321098",
-      "converted": false
-    },
-    "appointmentDate": "2024-02-17",
-    "appointmentTime": "14:00",
-    "service": "Eye Checkup",
-    "status": "Pending",
-    "source": "Phone Call",
-    "createdBy": {
-      "id": "S1",
-      "name": "Dr. Talwar",
-      "email": "dr.talwar@example.com",
-      "role": "Doctor",
-      "permissions": ["CREATE_APPOINTMENT", "VIEW_APPOINTMENT"],
-      "status": "Active",
-      "createdAt": "2023-01-01T00:00:00Z"
-    },
-    "createdAt": "2024-02-11T12:45:00Z"
-  },
-  {
-    "id": "4",
-    "patient": {
-      "id": "p4",
-      "name": "Sneha Reddy",
-      "email": "sneha.reddy@example.com",
-      "phoneNumber": "6543210987",
-      "converted": true
-    },
-    "appointmentDate": "2024-02-18",
-    "appointmentTime": "16:30",
-    "service": "Physiotherapy",
-    "status": "Scheduled",
-    "source": "Referral",
-    "createdBy": {
-      "id": "S1",
-      "name": "Dr. Talwar",
-      "email": "dr.talwar@example.com",
-      "role": "Doctor",
-      "permissions": ["CREATE_APPOINTMENT", "VIEW_APPOINTMENT"],
-      "status": "Active",
-      "createdAt": "2023-01-01T00:00:00Z"
-    },
-    "createdAt": "2024-02-12T15:10:00Z"
-  },
-  {
-    "id": "5",
-    "patient": {
-      "id": "p5",
-      "name": "Vikram Singh",
-      "email": "vikram.singh@example.com",
-      "phoneNumber": "5432109876",
-      "converted": false
-    },
-    "appointmentDate": "2024-02-19",
-    "appointmentTime": "10:00",
-    "service": "Cardiology Consultation",
-    "status": "Completed",
-    "source": "Hospital Website",
-    "createdBy": {
-      "id": "S1",
-      "name": "Dr. Talwar",
-      "email": "dr.talwar@example.com",
-      "role": "Doctor",
-      "permissions": ["CREATE_APPOINTMENT", "VIEW_APPOINTMENT"],
-      "status": "Active",
-      "createdAt": "2023-01-01T00:00:00Z"
-    },
-    "createdAt": "2024-02-13T08:30:00Z"
+    "notes": ""
   }
 ]

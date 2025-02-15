@@ -37,11 +37,6 @@ const mockUsers: User[] = [
     name: "John Admin",
     email: "admin@example.com",
     role: "admin",
-    permissions: {
-      users: { view: true, create: true, edit: true, delete: true },
-      appointments: { view: true, create: true, edit: true, delete: true },
-      inquiries: { view: true, create: true, edit: true, delete: true },
-    },
     status: "active",
     createdAt: "2024-01-20T10:00:00Z",
     lastLogin: "2024-01-25T15:30:00Z",
@@ -59,11 +54,6 @@ export default function UsersPage() {
     name: "",
     email: "",
     role: "staff",
-    permissions: {
-      users: { view: false, create: false, edit: false, delete: false },
-      appointments: { view: false, create: false, edit: false, delete: false },
-      inquiries: { view: false, create: false, edit: false, delete: false },
-    },
     status: "active",
   });
 
@@ -102,30 +92,17 @@ export default function UsersPage() {
       name: "",
       email: "",
       role: "staff",
-      permissions: {
-        users: { view: false, create: false, edit: false, delete: false },
-        appointments: { view: false, create: false, edit: false, delete: false },
-        inquiries: { view: false, create: false, edit: false, delete: false },
-      },
       status: "active",
     });
     setIsAddDialogOpen(false);
   };
 
   const handlePermissionChange = (
-    module: keyof User["permissions"],
     action: keyof Permission,
     checked: boolean
   ) => {
     setNewUser((prev) => ({
       ...prev,
-      permissions: {
-        ...prev.permissions,
-        [module]: {
-          ...prev.permissions?.[module],
-          [action]: checked,
-        },
-      } as User["permissions"],
     }));
   };
 
@@ -247,21 +224,6 @@ export default function UsersPage() {
                               key={action}
                               className="flex items-center gap-2"
                             >
-                              <Checkbox
-                                id={`${module}-${action}`}
-                                checked={
-                                  newUser.permissions?.[module]?.[
-                                    action as keyof Permission
-                                  ] ?? false
-                                }
-                                onCheckedChange={(checked) =>
-                                  handlePermissionChange(
-                                    module,
-                                    action as keyof Permission,
-                                    checked as boolean
-                                  )
-                                }
-                              />
                               <Label
                                 htmlFor={`${module}-${action}`}
                                 className="capitalize"
