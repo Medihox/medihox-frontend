@@ -279,7 +279,7 @@ export default function PatientsPage() {
                         variant="ghost"
                         size="sm"
                         className="h-8 w-8 p-0"
-                        onClick={() => handleDeletePatient(patient.id)}
+                        onClick={() => patient.id && handleDeletePatient(patient.id)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
