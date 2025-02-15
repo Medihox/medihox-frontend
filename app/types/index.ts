@@ -66,14 +66,14 @@ export interface User {
 }
 
 export interface Patient {
-  id: string;
-  name: string;
+  id?: string;
+  name?: string;
   email?: string | undefined;
-  phoneNumber: string;
+  phoneNumber?: string;
   whatsappNumber?: string | undefined;
   city?: string | undefined;
   country?: string | undefined;
   converted?: boolean | undefined;
-  createdById: User | undefined;
-  createdAt: string | undefined;
+  createdById?: User | undefined;
+  createdAt?: string | undefined;
 }
