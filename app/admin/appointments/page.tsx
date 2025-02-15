@@ -46,10 +46,15 @@ export default function AppointmentsPage() {
       email: "",
       phoneNumber: "",
       converted: false,
-      role: "",
-      permissions: [],
-      status: "",
       createdAt: new Date().toISOString(),
+      createdById: {
+        id: "",
+        name: "",
+        email: "",
+        status: "active",
+        role: "admin",
+        createdAt: new Date().toISOString(),
+      },
     },
     appointmentDate: "",
     appointmentTime: "",
@@ -60,6 +65,9 @@ export default function AppointmentsPage() {
       id: "",
       name: "",
       email: "",
+      role: "admin",
+      status: "active",
+      createdAt: new Date().toISOString(),
     },
     notes: "",
   });
@@ -78,18 +86,23 @@ export default function AppointmentsPage() {
         email: "",
         phoneNumber: "",
         converted: false,
+        createdAt: new Date().toISOString(),
+        createdById: {
+          id: "",
+          name: "",
+          email: "",
+          status: "active",
+          role: "admin",
+          createdAt: new Date().toISOString(),
+        },
       },
       appointmentDate: "",
       appointmentTime: "",
       service: "",
       status: "Scheduled",
       source: "",
-      createdBy: {
-        id: "",
-        name: "",
-        email: "",
-      },
       notes: "",
+      createdAt: new Date().toISOString(),
     });
     setIsAddDialogOpen(false);
   };
@@ -116,17 +129,21 @@ export default function AppointmentsPage() {
         email: "",
         phoneNumber: "",
         converted: false,
+        createdAt: new Date().toISOString(),
+        createdById: {
+          id: "",
+          name: "",
+          email: "",
+          status: "active",
+          role: "admin",
+          createdAt: new Date().toISOString(),
+        },
       },
       appointmentDate: "",
       appointmentTime: "",
       service: "",
       status: "Scheduled",
       source: "",
-      createdBy: {
-        id: "",
-        name: "",
-        email: "",
-      },
       notes: "",
     });
     setIsAddDialogOpen(false);
@@ -185,10 +202,6 @@ export default function AppointmentsPage() {
                       onChange={(e) =>
                         setNewAppointment({
                           ...newAppointment,
-                          patient: {
-                            ...newAppointment.patient,
-                            name: e.target.value,
-                          },
                         })
                       }
                     />
@@ -201,11 +214,7 @@ export default function AppointmentsPage() {
                       value={newAppointment.patient?.email || ""}
                       onChange={(e) =>
                         setNewAppointment({
-                          ...newAppointment,
-                          patient: {
-                            ...newAppointment.patient,
-                            email: e.target.value,
-                          },
+                          ...newAppointment
                         })
                       }
                     />
@@ -218,12 +227,8 @@ export default function AppointmentsPage() {
                       id="patientMobile"
                       value={newAppointment.patient?.phoneNumber || ""}
                       onChange={(e) =>
-                        setNewAppointment({
-                          ...newAppointment,
-                          patient: {
-                            ...newAppointment.patient,
-                            phoneNumber: e.target.value,
-                          },
+                          setNewAppointment({
+                            ...newAppointment,
                         })
                       }
                     />
@@ -297,8 +302,8 @@ export default function AppointmentsPage() {
                   <Label htmlFor="status">Status</Label>
                   <Select
                     value={newAppointment.status || "Scheduled"}
-                    onValueChange={(value: Appointment["status"]) =>
-                      setNewAppointment({ ...newAppointment, status: value })
+                    onValueChange={(value) =>
+                      setNewAppointment({ ...newAppointment, status: value as Appointment["status"] })
                     }
                   >
                     <SelectTrigger>
@@ -350,6 +355,7 @@ export default function AppointmentsPage() {
             </DialogContent>
           </Dialog>
         </div>
+
         <div className="rounded-lg bg-white shadow overflow-x-auto">
           <Table>
             <TableHeader>
@@ -402,7 +408,7 @@ export default function AppointmentsPage() {
                     {appointment.source}
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
-                    {appointment.createdBy.name}
+                    {appointment.createdBy?.name}
                   </TableCell>
                   <TableCell className="whitespace-nowrap truncate">
                     {appointment.notes}

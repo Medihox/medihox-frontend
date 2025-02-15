@@ -16,14 +16,14 @@ export type InquiryCSV = Omit<Inquiry, 'id'>;
 export interface Appointment {
   id: string;
   patient: Patient;
-  appointmentDate: string;
-  appointmentTime: string;
-  service: string;
-  status:  'Scheduled' | 'Enquiry' | 'Completed' | 'Cancelled';
-  source: string;
-  createdBy: User;
-  notes: string;
-  createdAt: string;
+  appointmentDate: string | undefined;
+  appointmentTime: string | undefined;
+  service: string | undefined;
+  status: 'Scheduled' | 'Enquiry' | 'Completed' | 'Cancelled' | undefined;
+  source: string | undefined;
+  createdBy: User | undefined;
+  notes: string | undefined;
+  createdAt: string | undefined;
 }
 
 export interface DashboardStats {
@@ -68,12 +68,12 @@ export interface User {
 export interface Patient {
   id: string;
   name: string;
-  email?: string;
+  email?: string | undefined;
   phoneNumber: string;
-  whatsappNumber?: string;
-  city?: string;
-  country?: string;
-  converted?: boolean;
-  createdById: User;
-  createdAt: string;
-};
+  whatsappNumber?: string | undefined;
+  city?: string | undefined;
+  country?: string | undefined;
+  converted?: boolean | undefined;
+  createdById: User | undefined;
+  createdAt: string | undefined;
+}

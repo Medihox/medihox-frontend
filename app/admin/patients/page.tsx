@@ -62,8 +62,8 @@ export default function PatientsPage() {
       id: "",
       name: "",
       email: "",
-      role: "",
-      status: "",
+      role: "admin",
+      status: "active",
       createdAt: "",
     },
   });
@@ -111,9 +111,8 @@ export default function PatientsPage() {
         id: "",
         name: "",
         email: "",
-        role: "",
-        permissions: [],
-        status: "",
+        role: "admin",
+        status: "active",
         createdAt: "",
       },
     });
@@ -262,9 +261,9 @@ export default function PatientsPage() {
                       {patient.converted ? "Yes" : "No"}
                     </Badge>
                   </TableCell>
-                  <TableCell>{patient.createdById.name}</TableCell>
+                  <TableCell>{patient.createdById?.name}</TableCell>
                   <TableCell>
-                    {new Date(patient.createdAt).toLocaleString()}
+                    {patient.createdAt ? new Date(patient.createdAt).toLocaleString() : "N/A"}
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
