@@ -126,9 +126,11 @@ export default function UsersPage() {
             <UsersIcon className="h-8 w-8 text-gray-700" />
             <h1 className="text-2xl font-bold text-gray-900">Users</h1>
           </div>
+          
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2">
+              <Button className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              >
                 <UserPlus className="h-4 w-4" />
                 New User
               </Button>
