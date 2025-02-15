@@ -9,7 +9,7 @@ export interface Inquiry {
   services: string;
   status: 'Active' | 'Inactive' | 'Following';
   createdAt: string;
-}
+};
 
 export type InquiryCSV = Omit<Inquiry, 'id'>;
 
