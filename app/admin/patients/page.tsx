@@ -1,296 +1,146 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Users as UsersIcon, UserPlus, Pencil, Trash2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Patient, User } from "../../types";
+import { PatientsList } from "./PatientsList";
+import { NewPatientDialog } from "./NewPatientDialog";
+import { Search, Filter, Plus } from "lucide-react";
 
-const mockPatients: Patient[] = [
-  {
-    id: "1",
-    name: "John Doe",
-    email: "john@example.com",
-    phoneNumber: "1234567890",
-    whatsappNumber: "1234567890",
-    city: "New York",
-    country: "USA",
-    converted: false,
-    createdById: {
-      id: "u1",
-      name: "Dr. Smith",
-      email: "dr.smith@example.com",
-      role: "doctor",
-      status: "active",
-      createdAt: "2024-01-01T10:00:00Z",
-    },
-    createdAt: "2024-01-20T10:00:00Z",
-  },
-];
+export type FilterTimeRange = 'all' | 'today' | 'week' | 'month';
+export type PatientStatus = 'all' | 'converted' | 'not-converted';
 
 export default function PatientsPage() {
-  const [patients, setPatients] = useState<Patient[]>(mockPatients);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
-  const [newPatient, setNewPatient] = useState<Partial<Patient>>({
-    name: "",
-    email: "",
-    phoneNumber: "",
-    whatsappNumber: "",
-    city: "",
-    country: "",
-    converted: false,
-    createdById: {
-      id: "",
-      name: "",
-      email: "",
-      role: "admin",
-      status: "active",
-      createdAt: "",
-    },
-  });
+  const [isNewPatientOpen, setIsNewPatientOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [timeRange, setTimeRange] = useState<FilterTimeRange>("all");
+  const [statusFilter, setStatusFilter] = useState<PatientStatus>("all");
+  const [showFilters, setShowFilters] = useState(false);
 
-  const handleAddPatient = () => {
-    const patient: Patient = {
-      ...newPatient as Patient,
-      id: (patients.length + 1).toString(),
-      createdAt: new Date().toISOString(),
-    };
-    setPatients([...patients, patient]);
-    resetForm();
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
   };
 
-  const handleEditPatient = (patient: Patient) => {
-    setEditingPatient(patient);
-    setNewPatient(patient);
-    setIsAddDialogOpen(true);
+  const handleTimeRangeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setTimeRange(e.target.value as FilterTimeRange);
   };
 
-  const handleUpdatePatient = () => {
-    if (!editingPatient) return;
-    const updatedPatients = patients.map((patient) =>
-      patient.id === editingPatient.id ? { ...patient, ...newPatient } : patient
-    );
-    setPatients(updatedPatients);
-    resetForm();
-  };
-
-  const handleDeletePatient = (id: string) => {
-    setPatients(patients.filter((patient) => patient.id !== id));
-  };
-
-  const resetForm = () => {
-    setEditingPatient(null);
-    setNewPatient({
-      name: "",
-      email: "",
-      phoneNumber: "",
-      whatsappNumber: "",
-      city: "",
-      country: "",
-      converted: false,
-      createdById: {
-        id: "",
-        name: "",
-        email: "",
-        role: "admin",
-        status: "active",
-        createdAt: "",
-      },
-    });
-    setIsAddDialogOpen(false);
+  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setStatusFilter(e.target.value as PatientStatus);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-8 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <UsersIcon className="h-8 w-8 text-gray-700" />
-            <h1 className="text-2xl font-bold text-gray-900">Patients</h1>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors">      
+      <div className="p-8">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">All Patients</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Manage and track all patients</p>
           </div>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <UserPlus className="h-4 w-4" />
-                New Patient
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingPatient ? "Edit Patient" : "Add New Patient"}
-                </DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="name">Name</Label>
-                    <Input
-                      id="name"
-                      value={newPatient.name}
-                      onChange={(e) =>
-                        setNewPatient({ ...newPatient, name: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={newPatient.email}
-                      onChange={(e) =>
-                        setNewPatient({ ...newPatient, email: e.target.value })
-                      }
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="phoneNumber">Phone Number</Label>
-                    <Input
-                      id="phoneNumber"
-                      value={newPatient.phoneNumber}
-                      onChange={(e) =>
-                        setNewPatient({ ...newPatient, phoneNumber: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="whatsappNumber">WhatsApp Number</Label>
-                    <Input
-                      id="whatsappNumber"
-                      value={newPatient.whatsappNumber}
-                      onChange={(e) =>
-                        setNewPatient({ ...newPatient, whatsappNumber: e.target.value })
-                      }
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="city">City</Label>
-                    <Input
-                      id="city"
-                      value={newPatient.city}
-                      onChange={(e) =>
-                        setNewPatient({ ...newPatient, city: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="country">Country</Label>
-                    <Input
-                      id="country"
-                      value={newPatient.country}
-                      onChange={(e) =>
-                        setNewPatient({ ...newPatient, country: e.target.value })
-                      }
-                    />
-                  </div>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="converted">Converted</Label>
-                  <Checkbox
-                    id="converted"
-                    checked={newPatient.converted}
-                    onCheckedChange={(checked) =>
-                      setNewPatient({ ...newPatient, converted: checked as boolean })
-                    }
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={resetForm}>
-                  Cancel
-                </Button>
-                <Button onClick={editingPatient ? handleUpdatePatient : handleAddPatient}>
-                  {editingPatient ? "Update" : "Add"}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <button 
+            onClick={() => setIsNewPatientOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            New Patient
+          </button>
         </div>
 
-        <div className="rounded-lg bg-white shadow overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Phone Number</TableHead>
-                <TableHead>WhatsApp Number</TableHead>
-                <TableHead>City</TableHead>
-                <TableHead>Country</TableHead>
-                <TableHead>Converted</TableHead>
-                <TableHead>Created By</TableHead>
-                <TableHead>Created At</TableHead>
-                <TableHead>Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {patients.map((patient) => (
-                <TableRow key={patient.id}>
-                  <TableCell>{patient.name}</TableCell>
-                  <TableCell>{patient.email}</TableCell>
-                  <TableCell>{patient.phoneNumber}</TableCell>
-                  <TableCell>{patient.whatsappNumber}</TableCell>
-                  <TableCell>{patient.city}</TableCell>
-                  <TableCell>{patient.country}</TableCell>
-                  <TableCell>
-                    <Badge className={patient.converted ? "bg-green-500" : "bg-red-500"}>
-                      {patient.converted ? "Yes" : "No"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{patient.createdById?.name}</TableCell>
-                  <TableCell>
-                    {patient.createdAt ? new Date(patient.createdAt).toLocaleString() : "N/A"}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={() => handleEditPatient(patient)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={() => patient.id && handleDeletePatient(patient.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2 flex-1">
+                <div className="relative flex-1 max-w-md">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={handleSearch}
+                    placeholder="Search patients..."
+                    className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400"
+                  />
+                </div>
+                <button 
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <Filter className="h-4 w-4" />
+                  Filters
+                </button>
+              </div>
+              <div className="flex items-center gap-4">
+                <select
+                  value={timeRange}
+                  onChange={handleTimeRangeChange}
+                  className="px-4 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-600 dark:text-gray-300"
+                >
+                  <option value="all">All Time</option>
+                  <option value="today">Today</option>
+                  <option value="week">This Week</option>
+                  <option value="month">This Month</option>
+                </select>
+                <select
+                  value={statusFilter}
+                  onChange={handleStatusChange}
+                  className="px-4 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-600 dark:text-gray-300"
+                >
+                  <option value="all">All Status</option>
+                  <option value="converted">Converted</option>
+                  <option value="not-converted">Not Converted</option>
+                </select>
+              </div>
+            </div>
+
+            {showFilters && (
+              <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      City
+                    </label>
+                    <select className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm">
+                      <option value="">All Cities</option>
+                      <option value="new-york">New York</option>
+                      <option value="los-angeles">Los Angeles</option>
+                      <option value="chicago">Chicago</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Country
+                    </label>
+                    <select className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm">
+                      <option value="">All Countries</option>
+                      <option value="usa">USA</option>
+                      <option value="canada">Canada</option>
+                      <option value="uk">UK</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Created By
+                    </label>
+                    <select className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm">
+                      <option value="">All Staff</option>
+                      <option value="dr-smith">Dr. Smith</option>
+                      <option value="dr-johnson">Dr. Johnson</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <PatientsList 
+            searchQuery={searchQuery}
+            timeRange={timeRange}
+            statusFilter={statusFilter}
+          />
         </div>
       </div>
+
+      <NewPatientDialog 
+        open={isNewPatientOpen}
+        onOpenChange={setIsNewPatientOpen}
+      />
     </div>
   );
 }

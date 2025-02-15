@@ -28,8 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { User, Role, Permission } from "../../types";
+import { User, Role } from "../../types";
 
 const mockUsers: User[] = [
   {
@@ -95,15 +94,6 @@ export default function UsersPage() {
       status: "active",
     });
     setIsAddDialogOpen(false);
-  };
-
-  const handlePermissionChange = (
-    action: keyof Permission,
-    checked: boolean
-  ) => {
-    setNewUser((prev) => ({
-      ...prev,
-    }));
   };
 
   const getStatusColor = (status: User["status"]) => {
@@ -210,31 +200,6 @@ export default function UsersPage() {
                         <SelectItem value="inactive">Inactive</SelectItem>
                       </SelectContent>
                     </Select>
-                  </div>
-                </div>
-                <div className="grid gap-4">
-                  <Label>Permissions</Label>
-                  <div className="space-y-4">
-                    {modules.map((module) => (
-                      <div key={module} className="space-y-2">
-                        <h3 className="font-medium capitalize">{module}</h3>
-                        <div className="flex gap-6">
-                          {["view", "create", "edit", "delete"].map((action) => (
-                            <div
-                              key={action}
-                              className="flex items-center gap-2"
-                            >
-                              <Label
-                                htmlFor={`${module}-${action}`}
-                                className="capitalize"
-                              >
-                                {action}
-                              </Label>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
                   </div>
                 </div>
               </div>

@@ -1,179 +1,148 @@
 "use client";
 
 import { useState } from "react";
-import { Calendar } from "lucide-react";
-import { dummyAppointments } from "@/lib/dummy-data";
-import { Appointment } from "../../types";
-import { AppointmentActions } from "@/components/admin/appointment/AppointmentActions";
-import { AppointmentDialog } from "@/components/admin/appointment/AppointmentDialog";
-import { AppointmentTable } from "@/components/admin/appointment/AppointmentTable";
-import { exportToCSV } from "@/components/admin/appointment/ExportToCsv";
-import { parseCSV } from "@/components/admin/appointment/ParseToCsv";
+import { AppointmentsList } from "@/components/appointments/AppointmentsList";
+import { NewAppointmentDialog } from "@/components/appointments/NewAppointmentDialog";
+import { Search, Filter, Plus } from "lucide-react";
 
-export default function AppointmentsPage() {
-  const [appointments, setAppointments] = useState<Appointment[]>(dummyAppointments);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
-  const [newAppointment, setNewAppointment] = useState<Partial<Appointment>>({
-    patient: {
-      id: "",
-      name: "",
-      email: "",
-      phoneNumber: "",
-      converted: false,
-      createdAt: new Date().toISOString(),
-      createdById: {
-        id: "",
-        name: "",
-        email: "",
-        status: "active",
-        role: "admin",
-        createdAt: new Date().toISOString(),
-      },
-    },
-    appointmentDate: "",
-    appointmentTime: "",
-    service: "",
-    status: "Scheduled",
-    source: "",
-    notes: "",
-  });
+export type FilterTimeRange = 'all' | 'today' | 'week' | 'month';
+export type AppointmentStatus = 'all' | 'scheduled' | 'completed' | 'cancelled' | 'enquired' | 'followup' | 'cost-issues';
 
-  const handleAddAppointment = () => {
-    const appointment: Appointment = {
-      ...(newAppointment as Appointment),
-      id: (appointments.length + 1).toString(),
-      createdAt: new Date().toISOString(),
-    };
-    setAppointments([...appointments, appointment]);
-    resetNewAppointment();
-    setIsAddDialogOpen(false);
+export default function AppointmentsListPage() {
+  const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [timeRange, setTimeRange] = useState<FilterTimeRange>("all");
+  const [statusFilter, setStatusFilter] = useState<AppointmentStatus>("all");
+  const [showFilters, setShowFilters] = useState(false);
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
   };
 
-  const handleEditAppointment = (appointment: Appointment) => {
-    setEditingAppointment(appointment);
-    setNewAppointment(appointment);
-    setIsAddDialogOpen(true);
+  const handleTimeRangeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setTimeRange(e.target.value as FilterTimeRange);
   };
 
-  const handleUpdateAppointment = () => {
-    if (!editingAppointment) return;
-    const updatedAppointments = appointments.map((appointment) =>
-      appointment.id === editingAppointment.id
-        ? { ...appointment, ...newAppointment }
-        : appointment
-    );
-    setAppointments(updatedAppointments);
-    setEditingAppointment(null);
-    resetNewAppointment();
-    setIsAddDialogOpen(false);
-  };
-
-  const handleDeleteAppointment = (id: string) => {
-    setAppointments(appointments.filter((appointment) => appointment.id !== id));
-  };
-
-  const resetNewAppointment = () => {
-    setNewAppointment({
-      patient: {
-        id: "",
-        name: "",
-        email: "",
-        phoneNumber: "",
-        converted: false,
-        createdAt: new Date().toISOString(),
-        createdById: {
-          id: "",
-          name: "",
-          email: "",
-          status: "active",
-          role: "admin",
-          createdAt: new Date().toISOString(),
-        },
-      },
-      appointmentDate: "",
-      appointmentTime: "",
-      service: "",
-      status: "Scheduled",
-      source: "",
-      notes: "",
-    });
-  };
-
-  const handleExport = () => {
-    const exportData = appointments.map(({ id, ...rest }) => ({ id, ...rest }));
-    exportToCSV(exportData);
-    console.log("Export Data:", exportData); // Replace with actual export logic
-  };
-
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-  
-    try {
-      const parsedData = await parseCSV(file);
-      const newAppointments: Appointment[] = parsedData.map((item, index) => ({
-        ...item,
-        id: (appointments.length + index + 1).toString(),
-      }));
-      setAppointments([...appointments, ...newAppointments]);
-    } catch (error) {
-      console.error("Error parsing CSV:", error);
-    }
-  };
-
-  const getStatusColor = (status: Appointment["status"]) => {
-    switch (status) {
-      case "Scheduled":
-        return "bg-blue-500";
-      case "Completed":
-        return "bg-green-500";
-      case "Cancelled":
-        return "bg-red-500";
-      case "Enquiry":
-        return "bg-yellow-500";
-      default:
-        return "bg-gray-500";
-    }
+  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setStatusFilter(e.target.value as AppointmentStatus);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-8 flex items-center">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-8 w-8 text-gray-700" />
-            <h1 className="text-2xl font-bold text-gray-900">Appointments</h1>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors">      
+      <div className="p-8">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">All Appointments</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Manage and track all appointments</p>
           </div>
+          <button 
+            onClick={() => setIsNewAppointmentOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            New Appointment
+          </button>
         </div>
 
-        <div className="mb-8">
-          <AppointmentActions
-            handleExport={handleExport}
-            handleFileUpload={handleFileUpload}
-            openDialog={() => setIsAddDialogOpen(true)}
-          />
-        </div>
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2 flex-1">
+                <div className="relative flex-1 max-w-md">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={handleSearch}
+                    placeholder="Search appointments..."
+                    className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400"
+                  />
+                </div>
+                <button 
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <Filter className="h-4 w-4" />
+                  Filters
+                </button>
+              </div>
+              <div className="flex items-center gap-4">
+                <select
+                  value={timeRange}
+                  onChange={handleTimeRangeChange}
+                  className="px-4 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-600 dark:text-gray-300"
+                >
+                  <option value="all">All Time</option>
+                  <option value="today">Today</option>
+                  <option value="week">This Week</option>
+                  <option value="month">This Month</option>
+                </select>
+                <select
+                  value={statusFilter}
+                  onChange={handleStatusChange}
+                  className="px-4 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-600 dark:text-gray-300"
+                >
+                  <option value="all">All Status</option>
+                  <option value="scheduled">Scheduled</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+            </div>
 
-        <AppointmentDialog
-          isOpen={isAddDialogOpen}
-          onOpenChange={setIsAddDialogOpen}
-          editingAppointment={editingAppointment}
-          newAppointment={newAppointment}
-          setNewAppointment={setNewAppointment}
-          handleAddAppointment={handleAddAppointment}
-          handleUpdateAppointment={handleUpdateAppointment}
-        />
-
-        <div className="rounded-lg bg-white shadow overflow-x-auto">
-          <AppointmentTable
-            appointments={appointments}
-            handleEditAppointment={handleEditAppointment}
-            handleDeleteAppointment={handleDeleteAppointment}
-            getStatusColor={getStatusColor}
+            {showFilters && (
+              <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Service
+                    </label>
+                    <select className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm">
+                      <option value="">All Services</option>
+                      <option value="general">General Checkup</option>
+                      <option value="dental">Dental Care</option>
+                      <option value="eye">Eye Care</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Source
+                    </label>
+                    <select className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm">
+                      <option value="">All Sources</option>
+                      <option value="whatsapp">WhatsApp</option>
+                      <option value="phone">Phone</option>
+                      <option value="facebook">Facebook</option>
+                      <option value="website">Website</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Created By
+                    </label>
+                    <select className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm">
+                      <option value="">All Staff</option>
+                      <option value="dr-smith">Dr. Smith</option>
+                      <option value="dr-johnson">Dr. Johnson</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <AppointmentsList 
+            searchQuery={searchQuery}
+            timeRange={timeRange}
+            statusFilter={statusFilter}
           />
         </div>
       </div>
+
+      <NewAppointmentDialog 
+        open={isNewAppointmentOpen}
+        onOpenChange={setIsNewAppointmentOpen}
+      />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { Users, CalendarDays, UserCheck, DollarSign } from 'lucide-react';
+import { Users, CalendarDays, UserCheck, FileSpreadsheet } from 'lucide-react';
 import { StatsCard } from '@/components/dashboard/StatsCard';
 import { AnalyticsChart } from '@/components/dashboard/AnalyticsChart';
 import { EventsCard } from '@/components/dashboard/EventsCard';
@@ -21,12 +21,12 @@ const statsCards = [
     }
   },
   {
-    title: "Active Patients",
-    value: "7,658",
+    title: "Total Patients",
+    value: "130",
     icon: UserCheck,
     details: [
-      { label: "Left", value: "21" },
-      { label: "New", value: "54" }
+      { label: "New", value: "30" },
+      { label: "Converted", value: "100" }
     ],
     colorScheme: {
       bg: "bg-green-200 dark:bg-green-950/30",
@@ -35,12 +35,12 @@ const statsCards = [
     }
   },
   {
-    title: "Collection",
-    value: "₹1,00,000",
-    icon: DollarSign,
+    title: "Total Enquiries",
+    value: "127",
+    icon: FileSpreadsheet,
     details: [
-      { label: "This month", value: "₹60,000" },
-      { label: "This session", value: "₹40,000" }
+      { label: "This week", value: "37" },
+      { label: "This month", value: "90" }
     ],
     colorScheme: {
       bg: "bg-yellow-200 dark:bg-yellow-950/30",
@@ -49,12 +49,12 @@ const statsCards = [
     }
   },
   {
-    title: "Patient Attendance",
-    value: "20",
+    title: "Total Appointments",
+    value: "128",
     icon: CalendarDays,
     details: [
-      { label: "Present", value: "6" },
-      { label: "Absent", value: "14" }
+      { label: "Upcoming", value: "58" },
+      { label: "This month", value: "70" }
     ],
     colorScheme: {
       bg: "bg-red-200 dark:bg-red-950/30",
