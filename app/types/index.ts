@@ -38,7 +38,7 @@ export interface DashboardStats {
     Facebook: number;
     Website: number;
   };
-}
+};
 
 export type Role = 'admin' | 'doctor' | 'receptionist' | 'staff';
 
