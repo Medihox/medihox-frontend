@@ -17,6 +17,7 @@ import {
   LogOut,
   Menu,
   X,
+  Paintbrush,
 } from "lucide-react";
 import { FaClinicMedical } from "react-icons/fa";
 import { useRouter } from "next/navigation";
@@ -29,6 +30,11 @@ const menuItems = [
   { icon: UserCog, label: "Patients", href: "/admin/patients" },
   { icon: Users, label: "Users", href: "/admin/users" },
   { icon: Bell, label: "Notifications", href: "/admin/notifications" },
+  { 
+    icon: Paintbrush,
+    label: "Customizations", 
+    href: "/admin/customizations" 
+  },
   { icon: PlusCircle, label: "Support", href: "/admin/support" },
   { icon: Settings, label: "Settings", href: "/admin/settings" },
 ];

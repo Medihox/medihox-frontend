@@ -18,7 +18,8 @@ const statsCards = [
       bg: "bg-purple-200 dark:bg-purple-950/30",
       iconBg: "bg-purple-100 dark:bg-purple-900/50",
       iconColor: "text-purple-600 dark:text-purple-400"
-    }
+    },
+    href: "/admin/users"
   },
   {
     title: "Total Patients",
@@ -32,7 +33,8 @@ const statsCards = [
       bg: "bg-green-200 dark:bg-green-950/30",
       iconBg: "bg-green-100 dark:bg-green-900/50",
       iconColor: "text-green-600 dark:text-green-400"
-    }
+    },
+    href: "/admin/patients"
   },
   {
     title: "Total Enquiries",
@@ -46,7 +48,8 @@ const statsCards = [
       bg: "bg-yellow-200 dark:bg-yellow-950/30",
       iconBg: "bg-yellow-100 dark:bg-yellow-900/50",
       iconColor: "text-yellow-600 dark:text-yellow-400"
-    }
+    },
+    href: "/admin/enquiries"
   },
   {
     title: "Total Appointments",
@@ -60,7 +63,8 @@ const statsCards = [
       bg: "bg-red-200 dark:bg-red-950/30",
       iconBg: "bg-red-100 dark:bg-red-900/50",
       iconColor: "text-red-600 dark:text-red-400"
-    }
+    },
+    href: "/admin/appointments"
   }
 ];
 

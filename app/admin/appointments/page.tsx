@@ -2,14 +2,30 @@
 
 import { useState } from "react";
 import { AppointmentsList } from "@/components/appointments/AppointmentsList";
-import { NewAppointmentDialog } from "@/components/appointments/NewAppointmentDialog";
+import { AppointmentDialog } from "@/components/appointments/AppointmentDialog";
 import { Search, Filter, Plus } from "lucide-react";
 
+interface Appointment {
+  id: string;
+  patientName: string;
+  date: string;
+  time: string;
+  status: string;
+  notes?: string;
+}
+
 export type FilterTimeRange = 'all' | 'today' | 'week' | 'month';
-export type AppointmentStatus = 'all' | 'scheduled' | 'completed' | 'cancelled' | 'enquired' | 'followup' | 'cost-issues';
+export type AppointmentStatus = 
+  | "all" 
+  | "scheduled" 
+  | "completed" 
+  | "cancelled" 
+  | "enquired" 
+  | "followup" 
+  | "cost-issues";
 
 export default function AppointmentsListPage() {
-  const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
+  const [isAppointmentDialogOpen, setIsAppointmentDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [timeRange, setTimeRange] = useState<FilterTimeRange>("all");
   const [statusFilter, setStatusFilter] = useState<AppointmentStatus>("all");
@@ -27,6 +43,11 @@ export default function AppointmentsListPage() {
     setStatusFilter(e.target.value as AppointmentStatus);
   };
 
+  const handleCreateAppointment = (appointmentData: Partial<Appointment>) => {
+    console.log('Creating new appointment:', appointmentData);
+    setIsAppointmentDialogOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors">      
       <div className="p-8">
@@ -36,7 +57,7 @@ export default function AppointmentsListPage() {
             <p className="text-sm text-gray-500 dark:text-gray-400">Manage and track all appointments</p>
           </div>
           <button 
-            onClick={() => setIsNewAppointmentOpen(true)}
+            onClick={() => setIsAppointmentDialogOpen(true)}
             className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
           >
             <Plus className="h-4 w-4" />
@@ -79,13 +100,16 @@ export default function AppointmentsListPage() {
                 </select>
                 <select
                   value={statusFilter}
-                  onChange={handleStatusChange}
-                  className="px-4 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-600 dark:text-gray-300"
+                  onChange={(e) => setStatusFilter(e.target.value as AppointmentStatus)}
+                  className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300"
                 >
                   <option value="all">All Status</option>
                   <option value="scheduled">Scheduled</option>
                   <option value="completed">Completed</option>
                   <option value="cancelled">Cancelled</option>
+                  <option value="enquired">Enquired</option>
+                  <option value="followup">Follow Up</option>
+                  <option value="cost-issues">Cost Issues</option>
                 </select>
               </div>
             </div>
@@ -139,9 +163,10 @@ export default function AppointmentsListPage() {
         </div>
       </div>
 
-      <NewAppointmentDialog 
-        open={isNewAppointmentOpen}
-        onOpenChange={setIsNewAppointmentOpen}
+      <AppointmentDialog 
+        open={isAppointmentDialogOpen}
+        onOpenChange={setIsAppointmentDialogOpen}
+        onSave={handleCreateAppointment}
       />
     </div>
   );

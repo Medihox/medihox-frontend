@@ -72,53 +72,54 @@ export default function SupportPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8">
       <div className="mx-auto max-w-7xl">
         <div className="flex items-center gap-2">
-          <HandCoinsIcon className="h-8 w-8 text-gray-700" />
-          <h1 className="text-2xl font-bold text-gray-900">Support</h1>
+          <HandCoinsIcon className="h-8 w-8 text-gray-700 dark:text-gray-300" />
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Support</h1>
         </div>
         <div className="mt-8 space-y-8">
-          <Card>
+          <Card className="dark:bg-gray-800 dark:border-gray-700">
             <CardHeader>
-              <CardTitle>Frequently Asked Questions</CardTitle>
-              <CardDescription>
+              <CardTitle className="dark:text-gray-100">Frequently Asked Questions</CardTitle>
+              <CardDescription className="dark:text-gray-400">
                 Find quick answers to common questions
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Accordion type="single" collapsible className="w-full">
                 {faqs.map((faq, index) => (
-                  <AccordionItem key={index} value={`item-${index}`}>
-                    <AccordionTrigger>{faq.question}</AccordionTrigger>
-                    <AccordionContent>{faq.answer}</AccordionContent>
+                  <AccordionItem key={index} value={`item-${index}`} className="dark:border-gray-700">
+                    <AccordionTrigger className="dark:text-gray-100">{faq.question}</AccordionTrigger>
+                    <AccordionContent className="dark:text-gray-400">{faq.answer}</AccordionContent>
                   </AccordionItem>
                 ))}
               </Accordion>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="dark:bg-gray-800 dark:border-gray-700">
             <CardHeader>
-              <CardTitle>Contact Support</CardTitle>
-              <CardDescription>
+              <CardTitle className="dark:text-gray-100">Contact Support</CardTitle>
+              <CardDescription className="dark:text-gray-400">
                 Can't find what you're looking for? Send us a message.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
+                  <Label htmlFor="name" className="dark:text-gray-300">Name</Label>
                   <Input
                     id="name"
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
                     required
+                    className="dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email" className="dark:text-gray-300">Email</Label>
                   <Input
                     id="email"
                     name="email"
@@ -126,26 +127,29 @@ export default function SupportPage() {
                     value={formData.email}
                     onChange={handleInputChange}
                     required
+                    className="dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="subject">Subject</Label>
+                  <Label htmlFor="subject" className="dark:text-gray-300">Subject</Label>
                   <Input
                     id="subject"
                     name="subject"
                     value={formData.subject}
                     onChange={handleInputChange}
                     required
+                    className="dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="message">Message</Label>
+                  <Label htmlFor="message" className="dark:text-gray-300">Message</Label>
                   <Textarea
                     id="message"
                     name="message"
                     value={formData.message}
                     onChange={handleInputChange}
                     required
+                    className="dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600"
                   />
                 </div>
                 <Button type="submit">Submit</Button>

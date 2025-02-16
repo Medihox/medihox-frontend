@@ -1,15 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Download, FileText, MoreVertical, Pencil, Trash2, Eye } from "lucide-react";
+import { Download, FileText, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 import { FilterTimeRange, AppointmentStatus } from "@/app/admin/appointments/page";
+import { useRouter } from "next/navigation";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { AppointmentDialog } from "./AppointmentDialog";
 
 interface Appointment {
   id: string;
@@ -157,18 +155,53 @@ const getSourceIcon = (source: string) => {
 };
 
 export function AppointmentsList({ searchQuery, timeRange, statusFilter }: AppointmentsListProps) {
+  const router = useRouter();
   const [selectedAppointments, setSelectedAppointments] = useState<string[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>(mockAppointments);
+  const [appointmentToEdit, setAppointmentToEdit] = useState<Appointment | undefined>();
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [appointmentToDelete, setAppointmentToDelete] = useState<Appointment | undefined>();
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-  const filteredAppointments = mockAppointments.filter(appointment => {
+  const filteredAppointments = appointments.filter(appointment => {
+    // Search filter
     const matchesSearch = 
       appointment.patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       appointment.patient.phoneNumber.includes(searchQuery) ||
       appointment.service.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesStatus = statusFilter === 'all' || appointment.status.toLowerCase() === statusFilter;
+    // Status filter
+    const matchesStatus = 
+      statusFilter === 'all' || 
+      appointment.status.toLowerCase() === statusFilter.toLowerCase();
 
-    // Add more time range filtering logic here
-    const matchesTimeRange = true; // Simplified for demo
+    // Time range filter
+    const appointmentDate = new Date(appointment.appointmentDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const matchesTimeRange = (() => {
+      switch (timeRange) {
+        case 'today':
+          return appointmentDate.toDateString() === today.toDateString();
+        
+        case 'week': {
+          const weekAgo = new Date();
+          weekAgo.setDate(today.getDate() - 7);
+          return appointmentDate >= weekAgo && appointmentDate <= today;
+        }
+        
+        case 'month': {
+          const monthAgo = new Date();
+          monthAgo.setMonth(today.getMonth() - 1);
+          return appointmentDate >= monthAgo && appointmentDate <= today;
+        }
+        
+        case 'all':
+        default:
+          return true;
+      }
+    })();
 
     return matchesSearch && matchesStatus && matchesTimeRange;
   });
@@ -199,144 +232,203 @@ export function AppointmentsList({ searchQuery, timeRange, statusFilter }: Appoi
     console.log("Exporting to PDF...");
   };
 
+  const handleViewDetails = (appointmentId: string) => {
+    router.push(`/admin/appointments/${appointmentId}`);
+  };
+
+  const handleEdit = (appointment: Appointment) => {
+    setAppointmentToEdit(appointment);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDelete = (appointment: Appointment) => {
+    setAppointmentToDelete(appointment);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleUpdateAppointment = (updatedAppointment: Partial<Appointment>) => {
+    setAppointments(appointments.map(app => 
+      app.id === appointmentToEdit?.id 
+        ? { ...app, ...updatedAppointment }
+        : app
+    ));
+    setAppointmentToEdit(undefined);
+  };
+
+  const handleConfirmDelete = () => {
+    if (appointmentToDelete) {
+      setAppointments(appointments.filter(app => app.id !== appointmentToDelete.id));
+      setAppointmentToDelete(undefined);
+      setIsDeleteDialogOpen(false);
+    }
+  };
+
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead>
-          <tr className="border-b border-gray-200 dark:border-gray-800">
-            <th className="py-4 px-4">
-              <input
-                type="checkbox"
-                checked={selectedAppointments.length === filteredAppointments.length}
-                onChange={handleSelectAll}
-                className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-              />
-            </th>
-            <th className="text-left py-4 px-4 text-sm font-medium text-gray-600 dark:text-gray-400">Patient</th>
-            <th className="text-left py-4 px-4 text-sm font-medium text-gray-600 dark:text-gray-400">Date & Time</th>
-            <th className="text-left py-4 px-4 text-sm font-medium text-gray-600 dark:text-gray-400">Service</th>
-            <th className="text-left py-4 px-4 text-sm font-medium text-gray-600 dark:text-gray-400">Status</th>
-            <th className="text-left py-4 px-4 text-sm font-medium text-gray-600 dark:text-gray-400">Source</th>
-            <th className="text-left py-4 px-4 text-sm font-medium text-gray-600 dark:text-gray-400">Created By</th>
-            <th className="text-center py-4 px-4 text-sm font-medium text-gray-600 dark:text-gray-400">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredAppointments.map((appointment) => (
-            <tr
-              key={appointment.id}
-              className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-            >
-              <td className="py-4 px-4">
+    <>
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-gray-200 dark:border-gray-800">
+              <th className="py-4 px-4">
                 <input
                   type="checkbox"
-                  checked={selectedAppointments.includes(appointment.id)}
-                  onChange={() => handleSelectAppointment(appointment.id)}
+                  checked={selectedAppointments.length === filteredAppointments.length}
+                  onChange={handleSelectAll}
                   className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                 />
-              </td>
-              <td className="py-4 px-4">
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {appointment.patient.name}
-                  </span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    {appointment.patient.phoneNumber}
-                  </span>
-                </div>
-              </td>
-              <td className="py-4 px-4">
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {format(new Date(appointment.appointmentDate), "MMM dd, yyyy")}
-                  </span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    {appointment.appointmentTime}
-                  </span>
-                </div>
-              </td>
-              <td className="py-4 px-4">
-                <span className="text-sm text-gray-900 dark:text-white">
-                  {appointment.service}
-                </span>
-              </td>
-              <td className="py-4 px-4">
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(appointment.status)}`}>
-                  {appointment.status}
-                </span>
-              </td>
-              <td className="py-4 px-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">{getSourceIcon(appointment.source)}</span>
-                  <span className="text-sm text-gray-900 dark:text-white">{appointment.source}</span>
-                </div>
-              </td>
-              <td className="py-4 px-4">
-                <div className="flex flex-col">
-                  <span className="text-sm text-gray-900 dark:text-white">
-                    {appointment.createdBy.name}
-                  </span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">
-                    {appointment.createdBy.role}
-                  </span>
-                </div>
-              </td>
-              <td className="py-4 px-4">
-                <div className="flex items-center justify-center">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
-                        <MoreVertical className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
-                      <DropdownMenuItem className="flex items-center gap-2">
-                        <Eye className="h-4 w-4" />
-                        View Details
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="flex items-center gap-2">
-                        <Pencil className="h-4 w-4" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="flex items-center gap-2 text-red-600 dark:text-red-400">
-                        <Trash2 className="h-4 w-4" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </td>
+              </th>
+              <th className="text-left py-4 px-4 text-sm font-medium text-gray-600 dark:text-gray-400">Patient</th>
+              <th className="text-left py-4 px-4 text-sm font-medium text-gray-600 dark:text-gray-400">Appointment Date</th>
+              <th className="text-left py-4 px-4 text-sm font-medium text-gray-600 dark:text-gray-400">Service</th>
+              <th className="text-left py-4 px-4 text-sm font-medium text-gray-600 dark:text-gray-400">Status</th>
+              <th className="text-left py-4 px-4 text-sm font-medium text-gray-600 dark:text-gray-400">Source</th>
+              <th className="text-left py-4 px-4 text-sm font-medium text-gray-600 dark:text-gray-400">Created By</th>
+              <th className="text-center py-4 px-4 text-sm font-medium text-gray-600 dark:text-gray-400">Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-      
-      <div className="p-4 border-t border-gray-200 dark:border-gray-800">
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-500 dark:text-gray-400">
-            {selectedAppointments.length > 0 
-              ? `Selected ${selectedAppointments.length} of ${filteredAppointments.length} appointments`
-              : `Showing ${filteredAppointments.length} appointments`
-            }
-          </div>
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={handleExportExcel}
-              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-            >
-              <Download className="h-4 w-4" />
-              Export Excel
-            </button>
-            <button 
-              onClick={handleExportPDF}
-              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-            >
-              <FileText className="h-4 w-4" />
-              Export PDF
-            </button>
+          </thead>
+          <tbody>
+            {filteredAppointments.map((appointment) => (
+              <tr
+                key={appointment.id}
+                className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+              >
+                <td className="py-4 px-4">
+                  <input
+                    type="checkbox"
+                    checked={selectedAppointments.includes(appointment.id)}
+                    onChange={() => handleSelectAppointment(appointment.id)}
+                    className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                  />
+                </td>
+                <td className="py-4 px-4">
+                  <div className="flex flex-col">
+                    <span 
+                      className="text-sm font-medium text-gray-900 dark:text-white hover:text-purple-600 dark:hover:text-purple-400 cursor-pointer"
+                      onClick={() => handleViewDetails(appointment.id)}
+                    >
+                      {appointment.patient.name}
+                    </span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {appointment.patient.phoneNumber}
+                    </span>
+                  </div>
+                </td>
+                <td className="py-4 px-4">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                      {format(new Date(appointment.appointmentDate), "MMM dd, yyyy")}
+                    </span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {appointment.appointmentTime}
+                    </span>
+                  </div>
+                </td>
+                <td className="py-4 px-4">
+                  <span className="text-sm text-gray-900 dark:text-white">
+                    {appointment.service}
+                  </span>
+                </td>
+                <td className="py-4 px-4">
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(appointment.status)}`}>
+                    {appointment.status}
+                  </span>
+                </td>
+                <td className="py-4 px-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">{getSourceIcon(appointment.source)}</span>
+                    <span className="text-sm text-gray-900 dark:text-white">{appointment.source}</span>
+                  </div>
+                </td>
+                <td className="py-4 px-4">
+                  <div className="flex flex-col">
+                    <span className="text-sm text-gray-900 dark:text-white">
+                      {appointment.createdBy.name}
+                    </span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+                      {appointment.createdBy.role}
+                    </span>
+                  </div>
+                </td>
+                <td className="py-4 px-4">
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      onClick={() => handleEdit(appointment)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-red-700 hover:bg-red-100 dark:text-red-300 dark:hover:bg-red-900"
+                      onClick={() => handleDelete(appointment)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        
+        <div className="p-4 border-t border-gray-200 dark:border-gray-800">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              {selectedAppointments.length > 0 
+                ? `Selected ${selectedAppointments.length} of ${filteredAppointments.length} appointments`
+                : `Showing ${filteredAppointments.length} appointments`
+              }
+            </div>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={handleExportExcel}
+                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              >
+                <Download className="h-4 w-4" />
+                Export Excel
+              </button>
+              <button 
+                onClick={handleExportPDF}
+                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              >
+                <FileText className="h-4 w-4" />
+                Export PDF
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+
+      <AppointmentDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        appointment={appointmentToEdit}
+        onSave={handleUpdateAppointment}
+      />
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the appointment for {appointmentToDelete?.patient.name}.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
