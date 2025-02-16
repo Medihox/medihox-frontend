@@ -108,7 +108,7 @@ export function StatusTab() {
           {statuses.map((status) => (
             <TableRow key={status.id}>
               <TableCell>
-                <Badge className={`bg-${status.color}-100 text-${status.color}-700`}>
+                <Badge className={`bg-${status.color}-100 text-${status.color}-700 dark:text-black dark:bg-${status.color}-800`}>
                   {status.name}
                 </Badge>
               </TableCell>

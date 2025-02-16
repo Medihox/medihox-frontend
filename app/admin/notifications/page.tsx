@@ -82,11 +82,11 @@ export default function NotificationsPage() {
   if (error) return <div>Error: {error}</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8">
       <div className="mx-auto max-w-7xl">
         <div className="flex items-center gap-2">
-          <BellRing className="h-8 w-8 text-gray-700" />
-          <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
+          <BellRing className="h-8 w-8 text-gray-700 dark:text-gray-300" />
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Notifications</h1>
         </div>
         <div className="flex items-center justify-start mt-8">
           <div className="mb-4 space-x-4">
@@ -129,10 +129,10 @@ function NotificationItem({
   onDelete: (id: string) => void;
 }) {
   const typeColors = {
-    info: "bg-blue-100 border-blue-200",
-    warning: "bg-yellow-100 border-yellow-200",
-    success: "bg-green-100 border-green-200",
-    error: "bg-red-100 border-red-200",
+    info: "bg-blue-100 dark:bg-blue-900/10 border-blue-200 dark:border-blue-700/10",
+    warning: "bg-yellow-100 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-700/10",
+    success: "bg-green-100 dark:bg-green-900/10 border-green-200 dark:border-green-700/10",
+    error: "bg-red-100 dark:bg-red-900/10 border-red-200 dark:border-red-700/10",
   };
 
   return (
@@ -146,7 +146,7 @@ function NotificationItem({
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold">{notification.title}</h3>
-          <p className="text-sm text-gray-600">{notification.message}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-100">{notification.message}</p>
           <p className="text-xs text-gray-500 mt-1">
             {new Date(notification.createdAt).toLocaleString()}
           </p>
@@ -188,7 +188,7 @@ function NotificationItem({
 
 function SkeletonNotification() {
   return (
-    <div className="p-4 border rounded-lg bg-gray-200 animate-pulse">
+    <div className="p-4 border rounded-lg bg-gray-200 dark:bg-gray-800 animate-pulse">
       <div className="flex items-center justify-between">
         <div className="space-y-2">
           <div className="h-4 bg-gray-300 rounded w-3/4"></div>

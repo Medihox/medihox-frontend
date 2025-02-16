@@ -78,22 +78,22 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-gray-200 dark:bg-gray-800 p-8">
       <div className="mx-auto max-w-7xl">
         <div className="flex items-center gap-2">
-          <Settings className="h-8 w-8 text-gray-700" />
-          <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+          <Settings className="h-8 w-8 text-gray-700 dark:text-white" />
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
         </div>
         <div className="mt-8">
           <Tabs defaultValue="general">
-            <TabsList>
+            <TabsList className="border-b dark:bg-gray-900">
               <TabsTrigger value="general">General</TabsTrigger>
               <TabsTrigger value="notifications">Notifications</TabsTrigger>
               <TabsTrigger value="security">Security</TabsTrigger>
             </TabsList>
 
             <TabsContent value="general">
-              <Card>
+              <Card className="dark:bg-gray-900">
                 <CardHeader>
                   <CardTitle>General Settings</CardTitle>
                   <CardDescription>
@@ -110,6 +110,7 @@ export default function SettingsPage() {
                         id={key}
                         name={key}
                         value={value}
+                        className="dark:bg-gray-900 dark:border-gray-800"
                         onChange={(e) =>
                           handleChange("general", key, e.target.value)
                         }
@@ -121,7 +122,7 @@ export default function SettingsPage() {
             </TabsContent>
 
             <TabsContent value="notifications">
-              <Card>
+              <Card className="dark:bg-gray-900">
                 <CardHeader>
                   <CardTitle>Notification Settings</CardTitle>
                   <CardDescription>
@@ -153,7 +154,7 @@ export default function SettingsPage() {
             </TabsContent>
 
             <TabsContent value="security">
-              <Card>
+              <Card className="dark:bg-gray-900">
                 <CardHeader>
                   <CardTitle>Security Settings</CardTitle>
                   <CardDescription>
@@ -186,6 +187,7 @@ export default function SettingsPage() {
                       name="passwordExpirationDays"
                       type="number"
                       value={settings.security.passwordExpirationDays}
+                      className="dark:bg-gray-900"
                       onChange={(e) =>
                         handleChange(
                           "security",
