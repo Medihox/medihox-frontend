@@ -18,7 +18,8 @@ const statsCards = [
       bg: "bg-blue-200 dark:bg-blue-950/30",
       iconBg: "bg-blue-100 dark:bg-blue-900/50",
       iconColor: "text-blue-600 dark:text-blue-400"
-    }
+    },
+    href: "/clinics"
   },
   {
     title: "Total Users",
@@ -32,7 +33,8 @@ const statsCards = [
       bg: "bg-green-200 dark:bg-green-950/30",
       iconBg: "bg-green-100 dark:bg-green-900/50",
       iconColor: "text-green-600 dark:text-green-400"
-    }
+    },
+    href: "/users"
   },
   {
     title: "Revenue",
@@ -46,7 +48,8 @@ const statsCards = [
       bg: "bg-yellow-200 dark:bg-yellow-950/30",
       iconBg: "bg-yellow-100 dark:bg-yellow-900/50",
       iconColor: "text-yellow-600 dark:text-yellow-400"
-    }
+    },
+    href: "/revenue"
   },
   {
     title: "System Activity",
@@ -60,7 +63,8 @@ const statsCards = [
       bg: "bg-red-200 dark:bg-red-950/30",
       iconBg: "bg-red-100 dark:bg-red-900/50",
       iconColor: "text-red-600 dark:text-red-400"
-    }
+    },
+    href: "/activity"
   }
 ];
 
