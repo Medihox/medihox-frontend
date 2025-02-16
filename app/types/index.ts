@@ -24,7 +24,7 @@ export interface Appointment {
   createdBy: User | undefined;
   notes: string | undefined;
   createdAt: string | undefined;
-}
+};
 
 export interface DashboardStats {
   totalInquiries: number;
