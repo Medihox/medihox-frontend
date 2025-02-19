@@ -70,7 +70,7 @@ export function Sidebar() {
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-800">
             <div className="flex gap-2">
               <FaClinicMedical className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-              {!collapsed && <h1 className="text-xl font-bold text-gray-900 dark:text-white">Dr. Talwar</h1>}
+              {!collapsed && <h1 className="text-xl font-bold text-gray-900 dark:text-white">Dr. PK Talwar</h1>}
             </div>
             <button onClick={() => setCollapsed(!collapsed)} className="p-1 rounded-lg hover:bg-gray-100">
               {collapsed ? <Menu className="h-5 w-5" /> : <X className="h-5 w-5" />}
