@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AppointmentsList } from "@/components/appointments/AppointmentsList";
 import { AppointmentDialog } from "@/components/appointments/AppointmentDialog";
 import { Search, Filter, Plus } from "lucide-react";
+import { CsvOperations } from "@/components/appointments/CsvOperations";
 
 interface Appointment {
   id: string;
@@ -56,13 +57,16 @@ export default function AppointmentsListPage() {
             <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">All Appointments</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">Manage and track all appointments</p>
           </div>
-          <button 
-            onClick={() => setIsAppointmentDialogOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            New Appointment
-          </button>
+          <div className="flex gap-2">
+            <CsvOperations />
+            <button 
+              onClick={() => setIsAppointmentDialogOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              New Appointment
+            </button>
+          </div>
         </div>
 
         <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800">

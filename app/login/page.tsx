@@ -19,22 +19,26 @@ import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { dummyUser, dummySuperAdmin } from "@/lib/dummy-data";
+import { useLoginMutation } from "@/lib/redux/services/authApi";
+import { useAppDispatch } from "@/lib/redux/hooks";
+import { setUser, setCredentials } from "@/lib/redux/slices/authSlice";
+import { getErrorMessage } from "@/lib/api/apiUtils";
+import toast from "react-hot-toast";
 
 const formSchema = z.object({
-  email: z.string().email({
-    message: "Please enter a valid email address.",
-  }),
-  password: z.string().min(8, {
-    message: "Password must be at least 8 characters.",
-  }),
+  email: z.string().email("Please enter a valid email address."),
+  password: z.string().min(1, "Password is required"),
 });
 
-export default function AdminLogin() {
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
-  const router = useRouter();
+type FormValues = z.infer<typeof formSchema>;
 
-  const form = useForm<z.infer<typeof formSchema>>({
+export default function AdminLogin() {
+  const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  const [login, { isLoading }] = useLoginMutation();
+
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: "",
@@ -42,27 +46,36 @@ export default function AdminLogin() {
     },
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsLoading(true);
-    
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    // Dummy authentication logic
-    const user = values.email === dummySuperAdmin.email 
-      ? dummySuperAdmin 
-      : dummyUser;
-    
-    setIsLoading(false);
-    
-    toast({
-      title: "Login Successful",
-      description: "Redirecting to dashboard...",
-    });
-
-    // Redirect based on user type
-    router.push(user.userType === 'SUPER_ADMIN' ? '/super-admin/dashboard' : '/admin/dashboard');
-  }
+  const onSubmit = async (data: FormValues) => {
+    try {
+      const response = await login(data).unwrap();
+      
+      // Store credentials in Redux
+      dispatch(setCredentials({
+        user: response.user,
+        accessToken: response.accessToken,
+        refreshToken: response.refreshToken,
+      }));
+      
+      // Set cookies for middleware
+      document.cookie = "isAuthenticated=true; path=/; max-age=31536000";
+      document.cookie = `userRole=${response.user.role}; path=/; max-age=31536000`;
+      
+      toast.success("Login successful!");
+      
+      // Redirect based on user role
+      if (response.user.role === "SUPER_ADMIN") {
+        router.push("/super-admin/dashboard");
+      } else if (response.user.role === "ADMIN") {
+        router.push("/admin/dashboard");
+      } else {
+        // Default redirect for other roles like EMPLOYEE
+        router.push("/dashboard");
+      }
+    } catch (error) {
+      toast.error(getErrorMessage(error) || "Login failed. Please try again.");
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800 p-4">

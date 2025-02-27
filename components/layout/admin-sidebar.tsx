@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -20,8 +20,9 @@ import {
   Paintbrush,
 } from "lucide-react";
 import { FaClinicMedical } from "react-icons/fa";
-import { useRouter } from "next/navigation";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { useAppDispatch } from "@/lib/redux/hooks";
+import { logout } from "@/lib/redux/slices/authSlice";
+import toast from "react-hot-toast";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard" },
@@ -45,6 +46,7 @@ export function Sidebar() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     const checkScreenSize = () => setIsMobile(window.innerWidth < 768);
@@ -54,7 +56,13 @@ export function Sidebar() {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
+    dispatch(logout());
+    
+    document.cookie = "isAuthenticated=; path=/; max-age=0";
+    document.cookie = "userRole=; path=/; max-age=0";
+    
+    toast.success("Logged out successfully");
+    
     router.push("/login");
   };
 

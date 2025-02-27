@@ -1,30 +1,34 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ImagePlus, X } from "lucide-react";
-import Image from "next/image";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Loader2 } from "lucide-react";
+import { useCreateAppointmentMutation, useUpdateAppointmentMutation, useDeleteAppointmentMutation } from "@/lib/redux/services/appointmentApi";
+import toast from "react-hot-toast";
+import { getErrorMessage } from "@/lib/api/apiUtils";
 
 interface Appointment {
   id: string;
-  patient: {
+  patient?: {
     name: string;
     email: string;
     phoneNumber: string;
     city: string;
   };
-  appointmentDate: string;
-  appointmentTime: string;
+  date: string;
+  time?: string;
   service: string;
   status: string;
   source: string;
-  beforeTreatmentImages?: string[];
-  afterTreatmentImages?: string[];
-  notes: string;
+  notes?: string;
   createdAt: string;
 }
 
@@ -32,8 +36,26 @@ interface AppointmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   appointment?: Appointment;
-  onSave: (appointment: Partial<Appointment>) => void;
+  onSave: (data: any) => void;
 }
+
+// Form validation schema
+const appointmentFormSchema = z.object({
+  // Patient information - allow empty strings as well
+  patientName: z.string().min(2, "Name must be at least 2 characters").or(z.literal('')),
+  patientEmail: z.string().email("Please enter a valid email").or(z.literal('')),
+  patientPhone: z.string().min(6, "Phone number must be at least 6 characters").or(z.literal('')),
+  
+  // Appointment details
+  date: z.string().min(1, "Date is required"),
+  time: z.string().optional(),
+  status: z.string().min(1, "Status is required"),
+  service: z.string().min(1, "Service is required"),
+  source: z.string().min(1, "Source is required"),
+  notes: z.string().optional(),
+});
+
+type FormValues = z.infer<typeof appointmentFormSchema>;
 
 export function AppointmentDialog({ 
   open, 
@@ -41,71 +63,135 @@ export function AppointmentDialog({
   appointment,
   onSave 
 }: AppointmentDialogProps) {
-  const [formData, setFormData] = useState<Partial<Appointment>>({
-    appointmentDate: "",
-    appointmentTime: "",
-    service: "",
-    status: "",
-    source: "",
-    notes: "",
-    beforeTreatmentImages: [],
-    afterTreatmentImages: []
-  });
+  const [createAppointment, { isLoading: isCreating }] = useCreateAppointmentMutation();
+  const [updateAppointment, { isLoading: isUpdating }] = useUpdateAppointmentMutation();
+  const [deleteAppointment] = useDeleteAppointmentMutation();
+  const [activeTab, setActiveTab] = useState("details");
+  
+  const [resolver, setResolver] = useState(() => zodResolver(appointmentFormSchema));
 
-  const [beforeImages, setBeforeImages] = useState<string[]>([]);
-  const [afterImages, setAfterImages] = useState<string[]>([]);
+  const { control, register, handleSubmit, formState: { errors }, reset } = useForm<FormValues>({
+    resolver,
+    defaultValues: {
+      patientName: "",
+      patientEmail: "",
+      patientPhone: "",
+      date: "",
+      time: "",
+      status: "Scheduled",
+      service: "General Checkup",
+      source: "WEBSITE",
+      notes: ""
+    }
+  });
 
   useEffect(() => {
     if (appointment) {
-      setFormData({
-        ...appointment,
-      });
-      setBeforeImages(appointment.beforeTreatmentImages || []);
-      setAfterImages(appointment.afterTreatmentImages || []);
+      console.log("Setting form values for editing:", appointment);
+      
+      // Format date properly - ensure we have a valid date string
+      let dateString = "";
+      if (appointment.date) {
+        try {
+          const date = new Date(appointment.date);
+          dateString = date.toISOString().split('T')[0];
+        } catch (e) {
+          console.error("Error parsing date:", e);
+        }
+      }
+      
+      reset({
+        patientName: appointment.patient?.name || "",
+        patientEmail: appointment.patient?.email || "",
+        patientPhone: appointment.patient?.phoneNumber || "",
+        date: dateString,
+        time: appointment.time || "",
+        status: appointment.status || "Scheduled",
+        service: appointment.service || "General Checkup",
+        source: appointment.source || "WEBSITE",
+        notes: appointment.notes || ""
+      }, { keepDefaultValues: false });
     }
+  }, [appointment, reset]);
+
+  useEffect(() => {
+    // Create a dynamic schema based on whether we're editing or creating
+    const schema = appointment 
+      ? z.object({
+          // Make patient fields optional when updating
+          patientName: z.string().optional(),
+          patientEmail: z.string().optional(),
+          patientPhone: z.string().optional(),
+          
+          // Required fields for both create and update
+          date: z.string().min(1, "Date is required"),
+          time: z.string().optional(),
+          status: z.string().min(1, "Status is required"),
+          service: z.string().min(1, "Service is required"),
+          source: z.string().min(1, "Source is required"),
+          notes: z.string().optional(),
+        })
+      : appointmentFormSchema; // Use original schema for create
+      
+    // Update the resolver with the new schema
+    setResolver(() => zodResolver(schema));
+    
   }, [appointment]);
 
-  const handleSave = () => {
-    onSave({
-      ...formData,
-      beforeTreatmentImages: beforeImages,
-      afterTreatmentImages: afterImages
-    });
-    onOpenChange(false);
-  };
-
-  const handleBeforeImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files) {
-      Array.from(files).forEach(file => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setBeforeImages(prev => [...prev, reader.result as string]);
+  const onSubmit = async (data: FormValues) => {
+    try {
+      console.log("Form data:", data);
+      
+      // Combine date and time into a single ISO string
+      let fullDate = data.date;
+      if (data.time) {
+        const dateObj = new Date(data.date);
+        const [hours, minutes] = data.time.split(':').map(Number);
+        dateObj.setHours(hours, minutes);
+        fullDate = dateObj.toISOString();
+      }
+      
+      if (appointment) {
+        // When updating, only include appointment-specific fields
+        const appointmentData = {
+          status: data.status,
+          service: data.service,
+          source: data.source,
+          date: fullDate,
+          notes: data.notes
         };
-        reader.readAsDataURL(file);
-      });
-    }
-  };
-
-  const handleAfterImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files) {
-      Array.from(files).forEach(file => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setAfterImages(prev => [...prev, reader.result as string]);
+        
+        await updateAppointment({
+          id: appointment.id,
+          appointment: appointmentData
+        }).unwrap();
+        
+        toast.success("Appointment updated successfully");
+      } else {
+        // When creating, include patient information
+        const appointmentData = {
+          patient: {
+            name: data.patientName,
+            email: data.patientEmail,
+            phoneNumber: data.patientPhone
+          },
+          status: data.status,
+          service: data.service,
+          source: data.source,
+          date: fullDate,
+          notes: data.notes
         };
-        reader.readAsDataURL(file);
-      });
+        
+        await createAppointment(appointmentData).unwrap();
+        toast.success("Appointment created successfully");
+      }
+      
+      reset();
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error with appointment:", error);
+      toast.error(getErrorMessage(error) || `Failed to ${appointment ? 'update' : 'create'} appointment`);
     }
-  };
-
-  const removeBeforeImage = (index: number) => {
-    setBeforeImages(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const removeAfterImage = (index: number) => {
-    setAfterImages(prev => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -117,178 +203,231 @@ export function AppointmentDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid gap-4 py-4">
-          {/* Basic Info Section */}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="grid gap-2">
-              <Label>Appointment Date</Label>
-              <Input
-                type="date"
-                value={formData.appointmentDate}
-                onChange={(e) => setFormData({ ...formData, appointmentDate: e.target.value })}
-              />
-            </div>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid grid-cols-2 mb-4">
+              <TabsTrigger value="details">Appointment Details</TabsTrigger>
+              <TabsTrigger value="patient">Patient Information</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="details">
+              {/* Appointment Details */}
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-2">
+                    <Label htmlFor="date">Appointment Date</Label>
+                    <Input
+                      id="date"
+                      type="date"
+                      {...register("date")}
+                    />
+                    {errors.date && (
+                      <p className="text-red-500 text-sm">{errors.date?.message}</p>
+                    )}
+                  </div>
 
-            <div className="grid gap-2">
-              <Label>Time</Label>
-              <Input
-                type="time"
-                value={formData.appointmentTime}
-                onChange={(e) => setFormData({ ...formData, appointmentTime: e.target.value })}
-              />
-            </div>
-          </div>
-
-          {/* Service Section */}
-          <div className="grid gap-2">
-            <Label>Service</Label>
-            <Select
-              value={formData.service}
-              onValueChange={(value) => setFormData({ ...formData, service: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select service" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="General Checkup">General Checkup</SelectItem>
-                <SelectItem value="Dental Care">Dental Care</SelectItem>
-                <SelectItem value="Eye Care">Eye Care</SelectItem>
-                <SelectItem value="Gynecological Checkup">Gynecological Checkup</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Status and Source Section */}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="grid gap-2">
-              <Label>Status</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(value) => setFormData({ ...formData, status: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Scheduled">Scheduled</SelectItem>
-                  <SelectItem value="Completed">Completed</SelectItem>
-                  <SelectItem value="Cancelled">Cancelled</SelectItem>
-                  <SelectItem value="Enquired">Enquired</SelectItem>
-                  <SelectItem value="Followup">Follow Up</SelectItem>
-                  <SelectItem value="Cost-Issues">Cost Issues</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid gap-2">
-              <Label>Source</Label>
-              <Select
-                value={formData.source}
-                onValueChange={(value) => setFormData({ ...formData, source: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select source" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="WhatsApp">WhatsApp</SelectItem>
-                  <SelectItem value="Phone">Phone</SelectItem>
-                  <SelectItem value="Facebook">Facebook</SelectItem>
-                  <SelectItem value="Website">Website</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Notes Section */}
-          <div className="grid gap-2">
-            <Label>Notes</Label>
-            <Input
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-            />
-          </div>
-
-          {/* Before Treatment Images Section */}
-          <div className="grid gap-2">
-            <Label>Before Treatment Images</Label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {beforeImages.map((image, index) => (
-                <div key={index} className="relative aspect-square">
-                  <Image
-                    src={image}
-                    alt={`Before treatment ${index + 1}`}
-                    fill
-                    className="object-cover rounded-lg"
-                  />
-                  <button
-                    onClick={() => removeBeforeImage(index)}
-                    className="absolute -top-2 -right-2 p-1 bg-red-500 rounded-full text-white hover:bg-red-600"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
+                  <div className="grid gap-2">
+                    <Label htmlFor="time">Time</Label>
+                    <Input
+                      id="time"
+                      type="time"
+                      {...register("time")}
+                    />
+                  </div>
                 </div>
-              ))}
-              <label className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center cursor-pointer hover:border-gray-400">
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleBeforeImageUpload}
-                />
-                <ImagePlus className="h-6 w-6 text-gray-400" />
-              </label>
-            </div>
-          </div>
 
-          {/* After Treatment Images Section */}
-          <div className="grid gap-2">
-            <Label>After Treatment Images</Label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {afterImages.map((image, index) => (
-                <div key={index} className="relative aspect-square">
-                  <Image
-                    src={image}
-                    alt={`After treatment ${index + 1}`}
-                    fill
-                    className="object-cover rounded-lg"
+                <div className="grid gap-2">
+                  <Label htmlFor="service">Service</Label>
+                  <Controller
+                    name="service"
+                    control={control}
+                    render={({ field }) => (
+                      <Select 
+                        onValueChange={field.onChange} 
+                        value={field.value}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select service" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="General Checkup">General Checkup</SelectItem>
+                          <SelectItem value="Dental Care">Dental Care</SelectItem>
+                          <SelectItem value="Eye Care">Eye Care</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
                   />
-                  <button
-                    onClick={() => removeAfterImage(index)}
-                    className="absolute -top-2 -right-2 p-1 bg-red-500 rounded-full text-white hover:bg-red-600"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
+                  {errors.service && (
+                    <p className="text-red-500 text-sm">{errors.service?.message}</p>
+                  )}
                 </div>
-              ))}
-              <label className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center cursor-pointer hover:border-gray-400">
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleAfterImageUpload}
-                />
-                <ImagePlus className="h-6 w-6 text-gray-400" />
-              </label>
-            </div>
-          </div>
-        </div>
 
-        <div className="flex justify-end gap-3 mt-6">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSave}
-            className="bg-purple-600 text-white hover:bg-purple-700"
-          >
-            {appointment ? "Update" : "Add"}
-          </Button>
-        </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-2">
+                    <Label htmlFor="status">Status</Label>
+                    <Controller
+                      name="status"
+                      control={control}
+                      render={({ field }) => (
+                        <Select 
+                          onValueChange={field.onChange} 
+                          value={field.value}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Scheduled">Scheduled</SelectItem>
+                            <SelectItem value="Completed">Completed</SelectItem>
+                            <SelectItem value="Cancelled">Cancelled</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                    {errors.status && (
+                      <p className="text-red-500 text-sm">{errors.status?.message}</p>
+                    )}
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="source">Source</Label>
+                    <Controller
+                      name="source"
+                      control={control}
+                      render={({ field }) => (
+                        <Select 
+                          onValueChange={field.onChange} 
+                          value={field.value}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select source" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="WEBSITE">Website</SelectItem>
+                            <SelectItem value="WHATSAPP">WhatsApp</SelectItem>
+                            <SelectItem value="PHONE">Phone</SelectItem>
+                            <SelectItem value="EMAIL">Email</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="notes">Notes</Label>
+                  <Input id="notes" {...register("notes")} />
+                </div>
+                
+                <div className="flex gap-4 mt-4">
+                  {appointment ? (
+                    <Button
+                      type="button"
+                      disabled={isUpdating}
+                      className="flex-1 bg-purple-600 text-white hover:bg-purple-700"
+                      onClick={handleSubmit(onSubmit)}
+                    >
+                      {isUpdating ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Updating...
+                        </>
+                      ) : (
+                        "Update Appointment"
+                      )}
+                    </Button>
+                  ) : (
+                    <Button 
+                      type="button" 
+                      variant="secondary" 
+                      className="flex-1"
+                      onClick={() => setActiveTab("patient")}
+                    >
+                      Next: Patient Information
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="patient">
+              {/* Patient Information */}
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="patientName">Patient Name</Label>
+                  <Input 
+                    id="patientName" 
+                    {...register("patientName")} 
+                    readOnly={!!appointment}
+                    disabled={!!appointment}
+                    className={appointment ? "bg-gray-100 cursor-not-allowed opacity-70" : ""}
+                  />
+                  {errors.patientName && (
+                    <p className="text-red-500 text-sm">{errors.patientName?.message}</p>
+                  )}
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="patientEmail">Email</Label>
+                  <Input 
+                    id="patientEmail" 
+                    type="email" 
+                    {...register("patientEmail")} 
+                    readOnly={!!appointment}
+                    disabled={!!appointment}
+                    className={appointment ? "bg-gray-100 cursor-not-allowed opacity-70" : ""}
+                  />
+                  {errors.patientEmail && (
+                    <p className="text-red-500 text-sm">{errors.patientEmail?.message}</p>
+                  )}
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="patientPhone">Phone Number</Label>
+                  <Input 
+                    id="patientPhone" 
+                    {...register("patientPhone")} 
+                    readOnly={!!appointment}
+                    disabled={!!appointment}
+                    className={appointment ? "bg-gray-100 cursor-not-allowed opacity-70" : ""}
+                  />
+                  {errors.patientPhone && (
+                    <p className="text-red-500 text-sm">{errors.patientPhone?.message}</p>
+                  )}
+                </div>
+                
+                <div className="flex gap-4 mt-4">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={() => setActiveTab("details")}
+                  >
+                    Back
+                  </Button>
+                  
+                  {!appointment && (
+                    <Button
+                      type="button"
+                      disabled={isCreating}
+                      className="flex-1 bg-purple-600 text-white hover:bg-purple-700"
+                      onClick={handleSubmit(onSubmit)}
+                    >
+                      {isCreating ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Creating...
+                        </>
+                      ) : (
+                        "Create Appointment"
+                      )}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </form>
       </DialogContent>
     </Dialog>
   );

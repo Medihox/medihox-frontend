@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
   Card,
@@ -15,14 +14,43 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "react-hot-toast";
-import { Settings } from "lucide-react";
+import { Settings, Loader2, Upload } from "lucide-react";
+import { useGetUserProfileQuery, useUpdateProfileMutation } from "@/lib/redux/services/authApi";
+import { getErrorMessage } from "@/lib/api/apiUtils";
+import Image from "next/image";
 
-const initialSettings = {
+interface GeneralSettings {
+  organizationName: string;
+  phone: string;
+  email: string;
+  name: string;
+  organizationLogo?: string;
+}
+
+interface NotificationSettings {
+  emailNotifications: boolean;
+  smsNotifications: boolean;
+  appointmentReminders: boolean;
+}
+
+interface SecuritySettings {
+  twoFactorAuth: boolean;
+  passwordExpirationDays: number;
+}
+
+interface Settings {
+  general: GeneralSettings;
+  notifications: NotificationSettings;
+  security: SecuritySettings;
+}
+
+const initialSettings: Settings = {
   general: {
-    clinicName: "",
-    address: "",
+    organizationName: "",
     phone: "",
     email: "",
+    name: "",
+    organizationLogo: "",
   },
   notifications: {
     emailNotifications: true,
@@ -36,31 +64,25 @@ const initialSettings = {
 };
 
 export default function SettingsPage() {
-  const [settings, setSettings] = useState(initialSettings);
+  const [settings, setSettings] = useState<Settings>(initialSettings);
+  const { data: profile, isLoading, error, refetch } = useGetUserProfileQuery();
+  const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
 
-  interface GeneralSettings {
-    clinicName: string;
-    address: string;
-    phone: string;
-    email: string;
-  }
-
-  interface NotificationSettings {
-    emailNotifications: boolean;
-    smsNotifications: boolean;
-    appointmentReminders: boolean;
-  }
-
-  interface SecuritySettings {
-    twoFactorAuth: boolean;
-    passwordExpirationDays: number;
-  }
-
-  interface Settings {
-    general: GeneralSettings;
-    notifications: NotificationSettings;
-    security: SecuritySettings;
-  }
+  useEffect(() => {
+    if (profile) {
+      setSettings(prev => ({
+        ...prev,
+        general: {
+          ...prev.general,
+          email: profile.email || "",
+          name: profile.name || "",
+          organizationName: profile.organizationName || "",
+          organizationLogo: profile.organizationLogo || "",
+          phone: profile.phone || "",
+        }
+      }));
+    }
+  }, [profile]);
 
   const handleChange = (
     section: keyof Settings,
@@ -73,9 +95,42 @@ export default function SettingsPage() {
     }));
   };
 
-  const handleSaveSettings = () => {
-    toast.success("Settings saved successfully");
+  const handleSaveSettings = async () => {
+    try {
+      // Prepare data for API call
+      const updateData = {
+        name: settings.general.name,
+        organizationName: settings.general.organizationName,
+        phone: settings.general.phone,
+      };
+
+      // Call the API
+      await updateProfile(updateData).unwrap();
+      
+      // Refetch the profile data to get the updated values
+      refetch();
+      
+      toast.success("Settings saved successfully");
+    } catch (error) {
+      toast.error(getErrorMessage(error) || "Failed to save settings");
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-red-500">Error loading profile data. Please try again.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-200 dark:bg-gray-800 p-8">
@@ -95,28 +150,75 @@ export default function SettingsPage() {
             <TabsContent value="general">
               <Card className="dark:bg-gray-900">
                 <CardHeader>
-                  <CardTitle>General Settings</CardTitle>
+                  <CardTitle>Profile Information</CardTitle>
                   <CardDescription>
-                    Manage your clinic's information
+                    View and update your profile information
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {Object.entries(settings.general).map(([key, value]) => (
-                    <div key={key} className="space-y-2">
-                      <Label htmlFor={key}>
-                        {key.replace(/([A-Z])/g, " $1")}
-                      </Label>
-                      <Input
-                        id={key}
-                        name={key}
-                        value={value}
-                        className="dark:bg-gray-900 dark:border-gray-800"
-                        onChange={(e) =>
-                          handleChange("general", key, e.target.value)
-                        }
-                      />
+                  {settings.general.organizationLogo && (
+                    <div className="flex flex-col items-center space-y-2 mb-6">
+                      <Label>Organization Logo</Label>
+                      <div className="w-32 h-32 relative rounded-md overflow-hidden border border-gray-200">
+                        <Image 
+                          src={settings.general.organizationLogo} 
+                          alt="Organization Logo" 
+                          width={128}
+                          height={128}
+                          style={{ objectFit: "cover" }}
+                        />
+                      </div>
                     </div>
-                  ))}
+                  )}
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Name</Label>
+                    <Input
+                      id="name"
+                      name="name"
+                      value={settings.general.name}
+                      className="dark:bg-gray-900 dark:border-gray-800"
+                      onChange={(e) =>
+                        handleChange("general", "name", e.target.value)
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      name="email"
+                      value={settings.general.email}
+                      className="dark:bg-gray-900 dark:border-gray-800"
+                      readOnly
+                      disabled
+                    />
+                    <p className="text-xs text-gray-500">Email address cannot be changed</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="organizationName">Organization Name</Label>
+                    <Input
+                      id="organizationName"
+                      name="organizationName"
+                      value={settings.general.organizationName}
+                      className="dark:bg-gray-900 dark:border-gray-800"
+                      onChange={(e) =>
+                        handleChange("general", "organizationName", e.target.value)
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone</Label>
+                    <Input
+                      id="phone"
+                      name="phone"
+                      value={settings.general.phone}
+                      className="dark:bg-gray-900 dark:border-gray-800"
+                      onChange={(e) =>
+                        handleChange("general", "phone", e.target.value)
+                      }
+                    />
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -202,8 +304,19 @@ export default function SettingsPage() {
             </TabsContent>
           </Tabs>
 
-          <Button className="mt-4" onClick={handleSaveSettings}>
-            Save Settings
+          <Button 
+            className="mt-4" 
+            onClick={handleSaveSettings}
+            disabled={isUpdating}
+          >
+            {isUpdating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Save Settings"
+            )}
           </Button>
         </div>
       </div>

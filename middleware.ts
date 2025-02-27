@@ -6,11 +6,26 @@ export function middleware(request: NextRequest) {
   
   // Get cookies to check onboarding and authentication status
   const hasCompletedOnboarding = request.cookies.get("hasCompletedOnboarding")?.value;
-  const isAuthenticated = request.cookies.get("isAuthenticated")?.value;
+  const isAuthenticated = request.cookies.get("isAuthenticated")?.value === "true";
   const userRole = request.cookies.get("userRole")?.value;
 
+  // If user is authenticated but trying to access login or home page, redirect to dashboard
+  if (isAuthenticated && (pathname === "/login" || pathname === "/")) {
+    // Redirect based on role
+    if (userRole === "SUPER_ADMIN") {
+      return NextResponse.redirect(new URL("/super-admin/dashboard", request.url));
+    } else if (userRole === "ADMIN") {
+      return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+    } else {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+  }
+
   // If user is trying to access anything other than onboarding page and hasn't completed onboarding
-  if (!hasCompletedOnboarding && pathname !== "/onboarding") {
+  if (!hasCompletedOnboarding && 
+      pathname !== "/onboarding" && 
+      pathname !== "/login" && 
+      !pathname.startsWith("/api/")) {
     return NextResponse.redirect(new URL("/onboarding", request.url));
   }
 
@@ -23,9 +38,37 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
 
-    // Optionally, check if the user role is valid (i.e., admin or super-admin)
-    if (userRole !== "ADMIN" && userRole !== "SUPER_ADMIN") {
-      return NextResponse.redirect(new URL("/forbidden", request.url)); // Forbidden route or any custom page
+    // Check user roles for specific routes
+    if (pathname.startsWith("/super-admin") && userRole !== "SUPER_ADMIN") {
+      return NextResponse.redirect(new URL("/forbidden", request.url));
+    }
+
+    if (pathname.startsWith("/admin") && userRole !== "ADMIN" && userRole !== "SUPER_ADMIN") {
+      return NextResponse.redirect(new URL("/forbidden", request.url));
+    }
+  }
+
+  // Role-based access control
+  if (isAuthenticated) {
+    // Super Admin can access everything
+    if (userRole === "SUPER_ADMIN") {
+      return NextResponse.next();
+    }
+    
+    // Admin can access admin routes and dashboard but not super-admin routes
+    if (userRole === "ADMIN") {
+      if (pathname.startsWith("/super-admin")) {
+        return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+      }
+      return NextResponse.next();
+    }
+    
+    // Employee can only access dashboard
+    if (userRole === "EMPLOYEE") {
+      if (pathname.startsWith("/admin") || pathname.startsWith("/super-admin")) {
+        return NextResponse.redirect(new URL("/dashboard", request.url));
+      }
+      return NextResponse.next();
     }
   }
 
@@ -33,5 +76,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/","/admin/:path*", "/super-admin/:path*"], // Apply only to admin or super-admin routes
+  matcher: ["/","/admin/:path*", "/super-admin/:path*", "/login", "/onboarding", "/dashboard/:path*", "/settings/:path*"],
 };

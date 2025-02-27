@@ -1,32 +1,42 @@
 "use client";
 
 import { useState } from "react";
-import { Download, FileText, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { Download, FileText, MoreVertical, Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { FilterTimeRange, AppointmentStatus } from "@/app/admin/appointments/page";
 import { useRouter } from "next/navigation";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { AppointmentDialog } from "./AppointmentDialog";
+import { useGetAppointmentsQuery, useUpdateAppointmentMutation, useDeleteAppointmentMutation } from "@/lib/redux/services/appointmentApi";
+import { Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { getErrorMessage } from "@/lib/api/apiUtils";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import React from "react";
+import { toast } from "react-hot-toast";
 
 interface Appointment {
   id: string;
-  patient: {
+  patient?: {
     name: string;
     email: string;
     phoneNumber: string;
     city: string;
   };
-  appointmentDate: string;
-  appointmentTime: string;
+  date: string;
+  time?: string;
   service: string;
   status: string;
   source: string;
-  createdBy: {
-    name: string;
-    role: string;
-  };
-  notes: string;
+  notes?: string;
   createdAt: string;
 }
 
@@ -40,15 +50,11 @@ const mockAppointments: Appointment[] = [
       phoneNumber: "+1234567890",
       city: "New York"
     },
-    appointmentDate: "2024-04-28",
-    appointmentTime: "10:00",
+    date: "2024-04-28",
+    time: "10:00",
     service: "General Checkup",
     status: "Scheduled",
     source: "Website",
-    createdBy: {
-      name: "Dr. Smith",
-      role: "doctor"
-    },
     notes: "Regular checkup",
     createdAt: "2024-04-25T10:00:00Z"
   },
@@ -60,15 +66,11 @@ const mockAppointments: Appointment[] = [
       phoneNumber: "+1234567891",
       city: "Los Angeles"
     },
-    appointmentDate: "2024-04-28",
-    appointmentTime: "11:30",
+    date: "2024-04-28",
+    time: "11:30",
     service: "Dental Care",
     status: "Completed",
     source: "WhatsApp",
-    createdBy: {
-      name: "Dr. Johnson",
-      role: "doctor"
-    },
     notes: "Follow-up appointment",
     createdAt: "2024-04-25T11:00:00Z"
   },
@@ -80,15 +82,11 @@ const mockAppointments: Appointment[] = [
       phoneNumber: "+1234567892",
       city: "San Francisco"
     },
-    appointmentDate: "2024-04-28",
-    appointmentTime: "14:00",
+    date: "2024-04-28",
+    time: "14:00",
     service: "Eye Checkup",
     status: "Cancelled",
     source: "Phone",
-    createdBy: {
-      name: "Dr. Williams",
-      role: "doctor"
-    },
     notes: "Emergency visit",
     createdAt: "2024-04-25T14:00:00Z"
   },
@@ -100,15 +98,11 @@ const mockAppointments: Appointment[] = [
       phoneNumber: "+1234567893",
       city: "Chicago"
     },
-    appointmentDate: "2024-04-28",
-    appointmentTime: "15:00",
+    date: "2024-04-28",
+    time: "15:00",
     service: "Gynecological Checkup",
     status: "Enquired",
     source: "Email",
-    createdBy: {
-      name: "Dr. Brown",
-      role: "doctor"
-    },
     notes: "Follow-up visit",
     createdAt: "2024-04-25T15:00:00Z"
   }
@@ -162,49 +156,70 @@ export function AppointmentsList({ searchQuery, timeRange, statusFilter }: Appoi
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [appointmentToDelete, setAppointmentToDelete] = useState<Appointment | undefined>();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
-  const filteredAppointments = appointments.filter(appointment => {
-    // Search filter
-    const matchesSearch = 
-      appointment.patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      appointment.patient.phoneNumber.includes(searchQuery) ||
-      appointment.service.toLowerCase().includes(searchQuery.toLowerCase());
+  // Add API hooks
+  const [updateAppointment, { isLoading: isUpdating }] = useUpdateAppointmentMutation();
+  const [deleteAppointment, { isLoading: isDeleting }] = useDeleteAppointmentMutation();
+  
+  // Improve filter creation to ensure proper values
+  const filters = React.useMemo(() => {
+    // Create a clean object with only defined filters
+    const result: Record<string, any> = {};
+    
+    // Only add search if it has a value
+    if (searchQuery && searchQuery.trim() !== '') {
+      result.search = searchQuery.trim();
+    }
+    
+    // Add time range filter if not 'all'
+    if (timeRange && timeRange !== 'all') {
+      result.timeRange = timeRange;
+    }
+    
+    // Add status filter if not 'all'
+    if (statusFilter && statusFilter !== 'all') {
+      result.status = statusFilter;
+    }
+    
+    // Always include pagination
+    result.page = page;
+    result.pageSize = pageSize;
+    
+    return result;
+  }, [searchQuery, timeRange, statusFilter, page, pageSize]);
 
-    // Status filter
-    const matchesStatus = 
-      statusFilter === 'all' || 
-      appointment.status.toLowerCase() === statusFilter.toLowerCase();
+  // Add debugging to see what's being sent
+  console.log('Sending filters to API:', filters);
+  const { data, isLoading, error } = useGetAppointmentsQuery(filters);
 
-    // Time range filter
-    const appointmentDate = new Date(appointment.appointmentDate);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  // Extract appointments safely from the response
+  const appointmentsData = React.useMemo(() => {
+    if (!data) return [];
+    
+    // Handle case where data is an object with appointments property
+    if (data && typeof data === 'object' && 'data' in data && Array.isArray((data as any).data)) {
+      return (data as any).data;
+    }
+    
+    // Handle case where data is directly an array
+    if (Array.isArray(data)) {
+      return data;
+    }
+    
+    console.error("Unexpected appointments data format:", data);
+    return [];
+  }, [data]);
 
-    const matchesTimeRange = (() => {
-      switch (timeRange) {
-        case 'today':
-          return appointmentDate.toDateString() === today.toDateString();
-        
-        case 'week': {
-          const weekAgo = new Date();
-          weekAgo.setDate(today.getDate() - 7);
-          return appointmentDate >= weekAgo && appointmentDate <= today;
-        }
-        
-        case 'month': {
-          const monthAgo = new Date();
-          monthAgo.setMonth(today.getMonth() - 1);
-          return appointmentDate >= monthAgo && appointmentDate <= today;
-        }
-        
-        case 'all':
-        default:
-          return true;
-      }
-    })();
-
-    return matchesSearch && matchesStatus && matchesTimeRange;
-  });
+  const pagination = data?.pagination || {
+    currentPage: 1,
+    pageSize: 10,
+    totalItems: 0,
+    totalPages: 0,
+    hasNextPage: false,
+    hasPreviousPage: false
+  };
 
   const handleSelectAppointment = (id: string) => {
     setSelectedAppointments(prev => 
@@ -216,9 +231,9 @@ export function AppointmentsList({ searchQuery, timeRange, statusFilter }: Appoi
 
   const handleSelectAll = () => {
     setSelectedAppointments(
-      selectedAppointments.length === filteredAppointments.length
+      selectedAppointments.length === appointments.length
         ? []
-        : filteredAppointments.map(a => a.id)
+        : appointments.map(a => a.id)
     );
   };
 
@@ -246,140 +261,147 @@ export function AppointmentsList({ searchQuery, timeRange, statusFilter }: Appoi
     setIsDeleteDialogOpen(true);
   };
 
-  const handleUpdateAppointment = (updatedAppointment: Partial<Appointment>) => {
-    setAppointments(appointments.map(app => 
-      app.id === appointmentToEdit?.id 
-        ? { ...app, ...updatedAppointment }
-        : app
-    ));
-    setAppointmentToEdit(undefined);
-  };
-
-  const handleConfirmDelete = () => {
-    if (appointmentToDelete) {
-      setAppointments(appointments.filter(app => app.id !== appointmentToDelete.id));
-      setAppointmentToDelete(undefined);
-      setIsDeleteDialogOpen(false);
+  const handleUpdateAppointment = async (updatedData: Partial<Appointment>) => {
+    try {
+      if (appointmentToEdit) {
+        await updateAppointment({ 
+          id: appointmentToEdit.id, 
+          appointment: updatedData 
+        }).unwrap();
+        
+        toast.success("Appointment updated successfully");
+        setIsEditDialogOpen(false);
+        setAppointmentToEdit(undefined);
+      }
+    } catch (error) {
+      toast.error(getErrorMessage(error) || "Failed to update appointment");
+      console.error("Error updating appointment:", error);
     }
   };
+
+  const handleConfirmDelete = async () => {
+    if (appointmentToDelete) {
+      try {
+        await deleteAppointment(appointmentToDelete.id).unwrap();
+        toast.success("Appointment deleted successfully");
+        setIsDeleteDialogOpen(false);
+        setAppointmentToDelete(undefined);
+      } catch (error) {
+        toast.error(getErrorMessage(error) || "Failed to delete appointment");
+        console.error("Error deleting appointment:", error);
+      }
+    }
+  };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="p-8 text-center text-red-500">
+        Error loading appointments. Please try again later.
+      </div>
+    );
+  }
+
+  // Show empty state
+  if (!appointmentsData || appointmentsData.length === 0) {
+    return (
+      <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+        No appointments found. Create a new appointment to get started.
+      </div>
+    );
+  }
 
   return (
     <>
       <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-200 dark:border-gray-800">
-              <th className="py-4 px-4">
-                <input
-                  type="checkbox"
-                  checked={selectedAppointments.length === filteredAppointments.length}
-                  onChange={handleSelectAll}
-                  className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                />
-              </th>
-              <th className="text-left py-4 px-4 text-sm font-medium text-gray-600 dark:text-gray-400">Patient</th>
-              <th className="text-left py-4 px-4 text-sm font-medium text-gray-600 dark:text-gray-400">Appointment Date</th>
-              <th className="text-left py-4 px-4 text-sm font-medium text-gray-600 dark:text-gray-400">Service</th>
-              <th className="text-left py-4 px-4 text-sm font-medium text-gray-600 dark:text-gray-400">Status</th>
-              <th className="text-left py-4 px-4 text-sm font-medium text-gray-600 dark:text-gray-400">Source</th>
-              <th className="text-left py-4 px-4 text-sm font-medium text-gray-600 dark:text-gray-400">Created By</th>
-              <th className="text-center py-4 px-4 text-sm font-medium text-gray-600 dark:text-gray-400">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredAppointments.map((appointment) => (
-              <tr
-                key={appointment.id}
-                className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Patient</TableHead>
+              <TableHead>Date & Time</TableHead>
+              <TableHead>Service</TableHead>
+              <TableHead>Source</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {appointmentsData.map((appointment: Appointment) => (
+              <TableRow 
+                key={appointment.id} 
+                onClick={() => handleViewDetails(appointment.id)}
+                className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
-                <td className="py-4 px-4">
-                  <input
-                    type="checkbox"
-                    checked={selectedAppointments.includes(appointment.id)}
-                    onChange={() => handleSelectAppointment(appointment.id)}
-                    className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                  />
-                </td>
-                <td className="py-4 px-4">
-                  <div className="flex flex-col">
-                    <span 
-                      className="text-sm font-medium text-gray-900 dark:text-white hover:text-purple-600 dark:hover:text-purple-400 cursor-pointer"
-                      onClick={() => handleViewDetails(appointment.id)}
-                    >
-                      {appointment.patient.name}
-                    </span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {appointment.patient.phoneNumber}
-                    </span>
-                  </div>
-                </td>
-                <td className="py-4 px-4">
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">
-                      {format(new Date(appointment.appointmentDate), "MMM dd, yyyy")}
-                    </span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {appointment.appointmentTime}
-                    </span>
-                  </div>
-                </td>
-                <td className="py-4 px-4">
-                  <span className="text-sm text-gray-900 dark:text-white">
-                    {appointment.service}
-                  </span>
-                </td>
-                <td className="py-4 px-4">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(appointment.status)}`}>
-                    {appointment.status}
-                  </span>
-                </td>
-                <td className="py-4 px-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm">{getSourceIcon(appointment.source)}</span>
-                    <span className="text-sm text-gray-900 dark:text-white">{appointment.source}</span>
-                  </div>
-                </td>
-                <td className="py-4 px-4">
-                  <div className="flex flex-col">
-                    <span className="text-sm text-gray-900 dark:text-white">
-                      {appointment.createdBy.name}
-                    </span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">
-                      {appointment.createdBy.role}
-                    </span>
-                  </div>
-                </td>
-                <td className="py-4 px-4">
-                  <div className="flex gap-2">
+                <TableCell className="font-medium">
+                  {appointment.patient?.name || 'Unknown Patient'}
+                </TableCell>
+                <TableCell>
+                  {appointment.date ? (
+                    <>
+                      {format(new Date(appointment.date), "MMM d, yyyy")}
+                      <br />
+                      <span className="text-gray-500 dark:text-gray-400">
+                        {appointment.time || format(new Date(appointment.date), "h:mm a")}
+                      </span>
+                    </>
+                  ) : (
+                    'Not scheduled'
+                  )}
+                </TableCell>
+                <TableCell>{appointment.service || 'General'}</TableCell>
+                <TableCell className="capitalize">
+                  {appointment.source?.toLowerCase() || 'Unknown'}
+                </TableCell>
+                <TableCell>
+                  <Badge 
+                    className={getStatusColor(appointment.status || 'Unknown')}
+                  >
+                    {appointment.status || 'Unknown'}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
                     <Button
                       variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      size="icon"
                       onClick={() => handleEdit(appointment)}
+                      className="h-8 w-8 p-0 mr-1"
                     >
                       <Pencil className="h-4 w-4" />
+                      <span className="sr-only">Edit</span>
                     </Button>
+                    
                     <Button
                       variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 text-red-700 hover:bg-red-100 dark:text-red-300 dark:hover:bg-red-900"
+                      size="icon"
                       onClick={() => handleDelete(appointment)}
+                      className="h-8 w-8 p-0 text-red-500 hover:text-red-600"
                     >
                       <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Delete</span>
                     </Button>
                   </div>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
         
         <div className="p-4 border-t border-gray-200 dark:border-gray-800">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-500 dark:text-gray-400">
               {selectedAppointments.length > 0 
-                ? `Selected ${selectedAppointments.length} of ${filteredAppointments.length} appointments`
-                : `Showing ${filteredAppointments.length} appointments`
+                ? `Selected ${selectedAppointments.length} of ${pagination.totalItems} appointments`
+                : `Showing ${pagination.currentPage === 1 ? 1 : (pagination.currentPage - 1) * pagination.pageSize + 1} to ${Math.min(pagination.currentPage * pagination.pageSize, pagination.totalItems)} of ${pagination.totalItems} appointments`
               }
             </div>
             <div className="flex items-center gap-2">
@@ -405,7 +427,7 @@ export function AppointmentsList({ searchQuery, timeRange, statusFilter }: Appoi
       <AppointmentDialog
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
-        appointment={appointmentToEdit}
+        appointment={appointmentToEdit as any}
         onSave={handleUpdateAppointment}
       />
 
@@ -414,21 +436,53 @@ export function AppointmentsList({ searchQuery, timeRange, statusFilter }: Appoi
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the appointment for {appointmentToDelete?.patient.name}.
+              This will permanently delete the appointment for {appointmentToDelete?.patient?.name}.
               This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDelete}
               className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              disabled={isDeleting}
             >
-              Delete
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <div className="flex justify-end mt-4">
+        <div className="flex space-x-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            disabled={!pagination.hasPreviousPage}
+            onClick={() => setPage(prev => Math.max(1, prev - 1))}
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Previous
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!pagination.hasNextPage}
+            onClick={() => setPage(prev => prev + 1)}
+          >
+            Next
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
     </>
   );
 }
