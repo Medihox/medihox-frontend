@@ -4,7 +4,7 @@ import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 export interface ApiError {
   status: number | string;
   data: any;
-}
+};
 
 export const isFetchBaseQueryError = (
   error: unknown
