@@ -6,7 +6,7 @@ import OnboardingForm from "./OnboardingForm"
 import LoadingScreen from "../../components/LoadingScreen"
 import toast from "react-hot-toast"
 import { useCompleteOnboardingMutation } from "@/lib/redux/services/authApi"
-import { useAppDispatch } from "@/lib/redux/hooks"
+import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks"
 import { setOnboardingCompleted } from "@/lib/redux/slices/authSlice"
 import { getErrorMessage } from "@/lib/api/apiUtils"
 
@@ -16,14 +16,34 @@ export default function OnboardingPage() {
   const router = useRouter()
   const dispatch = useAppDispatch()
   const [completeOnboarding] = useCompleteOnboardingMutation()
+  
+  // Get auth status from Redux
+  const hasCompletedOnboarding = useAppSelector(state => state.auth.hasCompletedOnboarding)
+  const isAuthenticated = useAppSelector(state => state.auth.isAuthenticated)
+  const accessToken = useAppSelector(state => state.auth.accessToken)
 
   useEffect(() => {
+    // If user is authenticated, redirect to dashboard
+    if (isAuthenticated || accessToken) {
+      toast.error("You are already logged in")
+      router.push("/admin/dashboard")
+      return
+    }
+    
+    // If onboarding is already completed, redirect to login
+    if (hasCompletedOnboarding) {
+      toast.info("You have already completed onboarding")
+      router.push("/login")
+      return
+    }
+    
+    // Otherwise, just show the onboarding page after loading
     const timer = setTimeout(() => {
       setIsLoading(false)
-    }, 3000)
+    }, 1500)
 
     return () => clearTimeout(timer)
-  }, [])
+  }, [hasCompletedOnboarding, isAuthenticated, accessToken, router])
 
   const handleOnboardingComplete = async (data: { 
     email: string;
@@ -46,14 +66,12 @@ export default function OnboardingPage() {
       
       // Set cookies for middleware
       document.cookie = "hasCompletedOnboarding=true; path=/; max-age=31536000"
-      document.cookie = "isAuthenticated=true; path=/; max-age=31536000"
-      document.cookie = "userRole=ADMIN; path=/; max-age=31536000"
       
       toast.success("Onboarding completed successfully!")
       
-      // Add a slight delay before redirection to ensure cookies are set
+      // Redirect to login page instead of dashboard
       setTimeout(() => {
-        router.push("/admin/dashboard")
+        router.push("/login")
       }, 500)
     } catch (error) {
       setIsSubmitting(false)

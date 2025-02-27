@@ -1,6 +1,7 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import { Toaster as HotToaster } from "react-hot-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -39,6 +40,9 @@ export default function RootLayout({
             </div>
           </ThemeProvider>
           <Toaster />
+          
+          {/* Add Hot Toast Provider */}
+          <HotToaster position="top-right" />
         </ReduxProviders>
       </body>
     </html>

@@ -1,8 +1,11 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import * as z from "zod";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -12,33 +15,26 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { useState } from "react";
-import { Loader2, LockKeyhole } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { dummyUser, dummySuperAdmin } from "@/lib/dummy-data";
+import { showSuccessToast, showErrorToast } from "@/lib/utils/toast";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useLoginMutation } from "@/lib/redux/services/authApi";
 import { useAppDispatch } from "@/lib/redux/hooks";
-import { setUser, setCredentials } from "@/lib/redux/slices/authSlice";
-import { getErrorMessage } from "@/lib/api/apiUtils";
-import toast from "react-hot-toast";
+import { setCredentials } from "@/lib/redux/slices/authSlice";
+import Link from "next/link";
 
 const formSchema = z.object({
-  email: z.string().email("Please enter a valid email address."),
-  password: z.string().min(1, "Password is required"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
-type FormValues = z.infer<typeof formSchema>;
-
-export default function AdminLogin() {
-  const [showPassword, setShowPassword] = useState(false);
+export default function LoginPage() {
   const router = useRouter();
-  const dispatch = useAppDispatch();
+  const [showPassword, setShowPassword] = useState(false);
   const [login, { isLoading }] = useLoginMutation();
+  const dispatch = useAppDispatch();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const form = useForm<FormValues>({
+  const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: "",
@@ -46,49 +42,70 @@ export default function AdminLogin() {
     },
   });
 
-  const onSubmit = async (data: FormValues) => {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    // Clear previous error message
+    setErrorMessage(null);
+    
     try {
-      const response = await login(data).unwrap();
-      
-      // Store credentials in Redux
-      dispatch(setCredentials({
-        user: response.user,
-        accessToken: response.accessToken,
-        refreshToken: response.refreshToken,
-      }));
-      
-      // Set cookies for middleware
-      document.cookie = "isAuthenticated=true; path=/; max-age=31536000";
+      const response = await login(values).unwrap();
+      dispatch(
+        setCredentials({
+          accessToken: response.accessToken,
+          refreshToken: response.refreshToken,
+          user: response.user,
+        })
+      );
+
+      // Store auth state in cookies for middleware
+      document.cookie = "isAuthenticated=true; path=/; max-age=31536000"; // 1 year
       document.cookie = `userRole=${response.user.role}; path=/; max-age=31536000`;
+
+      // Show success toast and delay redirect to ensure it's visible
+      showSuccessToast(`Welcome, ${response.user.name || 'User'}! Login successful.`);
       
-      toast.success("Login successful!");
-      
-      // Redirect based on user role
-      if (response.user.role === "SUPER_ADMIN") {
-        router.push("/super-admin/dashboard");
-      } else if (response.user.role === "ADMIN") {
+      // Delay redirect to make sure user sees the success message
+      setTimeout(() => {
         router.push("/admin/dashboard");
-      } else {
-        // Default redirect for other roles like EMPLOYEE
-        router.push("/dashboard");
+      }, 800); // Slight delay for better UX
+    } catch (error: any) {
+      // Extract the specific error message from the backend response
+      let message = "Login failed. Please try again.";
+      
+      // Check for different structures of error responses
+      if (error.data?.message) {
+        message = error.data.message;
+      } else if (error.data?.error) {
+        message = error.data.error;
+      } else if (error.message) {
+        message = error.message;
+      } else if (typeof error === 'string') {
+        message = error;
       }
-    } catch (error) {
-      toast.error(getErrorMessage(error) || "Login failed. Please try again.");
+      
+      // Set the error message to display in the UI
+      setErrorMessage(message);
+      
+      // Also show a toast for immediate feedback
+      showErrorToast(message);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800 p-4">
-      <div className="w-full max-w-md space-y-8 bg-white dark:bg-gray-950 p-8 rounded-xl shadow-lg">
-        <div className="flex flex-col items-center gap-2">
-          <div className="rounded-full bg-primary/10 p-4">
-            <LockKeyhole className="h-6 w-6 text-primary" />
-          </div>
-          <h2 className="text-2xl font-bold tracking-tight">Admin Login</h2>
-          <p className="text-sm text-muted-foreground">
-            Enter your credentials to access the admin portal
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+      <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Welcome Back</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
+            Sign in to your account to continue
           </p>
         </div>
+
+        {/* Display backend error message */}
+        {errorMessage && (
+          <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-md text-red-600">
+            {errorMessage}
+          </div>
+        )}
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -100,62 +117,68 @@ export default function AdminLogin() {
                   <FormLabel>Email</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="admin@clinic.com"
-                      type="email"
-                      disabled={isLoading}
+                      placeholder="Enter your email"
                       {...field}
+                      disabled={isLoading}
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="password"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Enter your password"
-                      type="password"
-                      disabled={isLoading}
-                      {...field}
-                    />
-                  </FormControl>
+                  <div className="relative">
+                    <FormControl>
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Enter your password"
+                        {...field}
+                        disabled={isLoading}
+                      />
+                    </FormControl>
+                    <button
+                      type="button"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <div className="space-y-4">
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isLoading}
-              >
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isLoading ? "Signing in..." : "Sign in"}
-              </Button>
-              <div className="text-center">
-                <Link
-                  href="#"
-                  className="text-sm text-primary hover:underline"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-            </div>
+
+            <Button
+              type="submit"
+              className="w-full bg-purple-600 hover:bg-purple-700"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                "Sign In"
+              )}
+            </Button>
           </form>
         </Form>
 
-        <div className="mt-4 text-center text-sm text-muted-foreground">
-          <p>Protected by enterprise-grade security</p>
-          <p className="mt-2 text-xs">
-            Demo credentials:<br />
-            Admin: admin@clinic.com<br />
-            Super Admin: super@clinic.com<br />
-            Password: any 8+ characters
+        {/* Add the onboarding option */}
+        <div className="mt-8 text-center">
+          <p className="text-gray-600 dark:text-gray-400">
+            New clinic or first time?{" "}
+            <Link href="/onboarding" className="text-purple-600 hover:text-purple-700 font-medium">
+              Complete your onboarding
+            </Link>
           </p>
         </div>
       </div>
