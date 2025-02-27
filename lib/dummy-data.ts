@@ -14,7 +14,7 @@ export const dummySuperAdmin: User = {
   email: 'super@clinic.com',
   name: 'Super Admin',
   userType: 'SUPER_ADMIN',
-};
+}
 
 export const dummyClinics: Clinic[] = [
   {
