@@ -20,9 +20,11 @@ import {
   Paintbrush,
 } from "lucide-react";
 import { FaClinicMedical } from "react-icons/fa";
-import { useAppDispatch } from "@/lib/redux/hooks";
+import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { logout } from "@/lib/redux/slices/authSlice";
 import toast from "react-hot-toast";
+import { useGetUserProfileQuery } from "@/lib/redux/services/authApi";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard" },
@@ -47,6 +49,10 @@ export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const dispatch = useAppDispatch();
+  
+  // Fetch the user profile data
+  const { data: userProfile, isLoading: profileLoading } = useGetUserProfileQuery();
+  const userName = userProfile?.name || "Admin User";
 
   useEffect(() => {
     const checkScreenSize = () => setIsMobile(window.innerWidth < 768);
@@ -66,6 +72,20 @@ export function Sidebar() {
     router.push("/login");
   };
 
+  // Helper function to check if current path is active for a menu item
+  const isActive = (href: string) => {
+    if (pathname === href) return true;
+    
+    // For sub-routes, check if the pathname starts with the menu item href
+    // But make sure it's a complete segment match (e.g., /admin/patients should match /admin/patients/123
+    // but not /admin/patient-settings)
+    if (href !== '/admin/dashboard') { // Dashboard is special case, only exact match
+      return pathname.startsWith(href + '/');
+    }
+    
+    return false;
+  };
+
   return (
     <>
       {!isMobile && (
@@ -78,7 +98,15 @@ export function Sidebar() {
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-800">
             <div className="flex gap-2">
               <FaClinicMedical className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-              {!collapsed && <h1 className="text-xl font-bold text-gray-900 dark:text-white">Dr. PK Talwar</h1>}
+              {!collapsed && (
+                profileLoading ? (
+                  <Skeleton className="h-6 w-32" />
+                ) : (
+                  <h1 className="text-xl font-bold text-gray-900 dark:text-white truncate">
+                    {userName}
+                  </h1>
+                )
+              )}
             </div>
             <button onClick={() => setCollapsed(!collapsed)} className="p-1 rounded-lg hover:bg-gray-100">
               {collapsed ? <Menu className="h-5 w-5" /> : <X className="h-5 w-5" />}
@@ -94,7 +122,7 @@ export function Sidebar() {
                   href={item.href}
                   className={cn(
                     "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",
-                    pathname === item.href
+                    isActive(item.href) || pathname === item.href
                       ? "bg-purple-600 text-white dark:bg-purple-500"
                       : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                   )}
@@ -137,7 +165,9 @@ export function Sidebar() {
             className="fixed top-0 right-0 h-screen w-64 bg-white dark:bg-gray-900 shadow-lg border-l z-50 flex flex-col"
           >
             <div className="p-4 flex justify-between items-center border-b border-gray-200 dark:border-gray-800">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Admin</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white truncate">
+                {profileLoading ? <Skeleton className="h-6 w-32" /> : userName}
+              </h2>
               <button onClick={() => setMobileNavOpen(false)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
                 <X className="h-6 w-6" />
               </button>
@@ -153,7 +183,7 @@ export function Sidebar() {
                     onClick={() => setMobileNavOpen(false)}
                     className={cn(
                       "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",
-                      pathname === item.href
+                      isActive(item.href) || pathname === item.href
                         ? "bg-purple-600 text-white dark:bg-purple-500"
                         : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                     )}

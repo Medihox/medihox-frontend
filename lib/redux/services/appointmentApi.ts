@@ -86,6 +86,7 @@ export interface AppointmentFilters {
   search?: string;
   page?: number;
   pageSize?: number;
+  isEnquiry?: boolean;
 }
 
 // Add a paginated response interface

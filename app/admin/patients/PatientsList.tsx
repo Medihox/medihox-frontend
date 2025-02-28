@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Download, FileText, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { Download, FileText, MoreVertical, Pencil, Trash2, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,141 +24,93 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
-
-interface Patient {
-  id: string;
-  name: string;
-  email: string;
-  phoneNumber: string;
-  address: string;
-  converted: boolean;
-  createdById: {
-    id: string;
-    name: string;
-    email: string;
-    role: string;
-    status: string;
-    createdAt: string;
-  };
-  createdAt: string;
-}
-
-const mockPatients: Patient[] = [
-  {
-    id: "1",
-    name: "John Doe",
-    email: "john@example.com",
-    phoneNumber: "1234567890",
-    address: "New York, USA",
-    converted: false,
-    createdById: {
-      id: "u1",
-      name: "Dr. Smith",
-      email: "dr.smith@example.com",
-      role: "doctor",
-      status: "active",
-      createdAt: "2024-01-01T10:00:00Z",
-    },
-    createdAt: "2024-01-20T10:00:00Z",
-  },
-  {
-    id: "2",
-    name: "Jane Smith",
-    email: "jane@example.com",
-    phoneNumber: "0987654321",
-    address: "Los Angeles, USA",
-    converted: true,
-    createdById: {
-      id: "u2",
-      name: "Dr. Johnson",
-      email: "dr.johnson@example.com",
-      role: "doctor",
-      status: "active",
-      createdAt: "2024-01-15T10:00:00Z",
-    },
-    createdAt: "2024-01-25T10:00:00Z",
-  },
-];
+import {
+  useGetPatientsQuery,
+  useDeletePatientMutation,
+  useUpdatePatientMutation,
+  Patient
+} from "@/lib/redux/services/patientApi";
+import { showSuccessToast, showErrorToast } from "@/lib/utils/toast";
+import { getErrorMessage } from "@/lib/api/apiUtils";
+import { NewPatientDialog } from "./NewPatientDialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface PatientsListProps {
   searchQuery: string;
   timeRange: "all" | "today" | "week" | "month";
-  statusFilter: "all" | "converted" | "not-converted";
+  statusFilter: 'all' | 'ACTIVE' | 'INACTIVE' | 'CONVERTED' | 'DELETED';
 }
 
-const getConversionStatusColor = (converted: boolean) => {
-  if (converted) {
-    return "bg-green-50 text-green-600 dark:bg-green-500/10 dark:text-green-400";
-  }
-  return "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400";
-};
+export type PatientStatus = 'all' | 'ACTIVE' | 'INACTIVE' | 'CONVERTED' | 'DELETED';
 
 export function PatientsList({ searchQuery, timeRange, statusFilter }: PatientsListProps) {
   const router = useRouter();
-  const [patients, setPatients] = useState<Patient[]>(mockPatients);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+
+  // Query patients with filtering
+  const { data, isLoading, isFetching, error } = useGetPatientsQuery({
+    page,
+    pageSize,
+    search: searchQuery,
+    timeRange,
+    status: statusFilter
+  });
+
+  const [deletePatient, { isLoading: isDeleting }] = useDeletePatientMutation();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
   const [patientToUpdate, setPatientToUpdate] = useState<Patient | null>(null);
   const [updatedPatientData, setUpdatedPatientData] = useState<Partial<Patient>>({});
+  const [updatePatient, { isLoading: isUpdating }] = useUpdatePatientMutation();
 
-  const filteredPatients = patients.filter((patient) => {
-    const matchesSearchQuery =
-      patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      patient.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      patient.phoneNumber.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchesTimeRange =
-      timeRange === "all" ||
-      (timeRange === "today" && new Date(patient.createdAt).toDateString() === new Date().toDateString()) ||
-      (timeRange === "week" && new Date(patient.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)) ||
-      (timeRange === "month" && new Date(patient.createdAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
-
-    const matchesStatus =
-      statusFilter === "all" ||
-      (statusFilter === "converted" && patient.converted) ||
-      (statusFilter === "not-converted" && !patient.converted);
-
-    return matchesSearchQuery && matchesTimeRange && matchesStatus;
-  });
+  const handlePatientClick = (id: string) => {
+    router.push(`/admin/patients/${id}`);
+  };
 
   const handleDelete = (patient: Patient) => {
     setPatientToDelete(patient);
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
-    if (patientToDelete) {
-      setPatients(patients.filter((p) => p.id !== patientToDelete.id));
+  const confirmDelete = async () => {
+    if (!patientToDelete) return;
+    
+    try {
+      await deletePatient(patientToDelete.id).unwrap();
+      showSuccessToast("Patient deleted successfully");
       setDeleteDialogOpen(false);
       setPatientToDelete(null);
+    } catch (error) {
+      showErrorToast(getErrorMessage(error) || "Failed to delete patient");
     }
   };
 
   const handleUpdate = (patient: Patient) => {
     setPatientToUpdate(patient);
-    setUpdatedPatientData(patient);
     setUpdateDialogOpen(true);
-  };
-
-  const confirmUpdate = () => {
-    if (patientToUpdate && updatedPatientData) {
-      setPatients(patients.map((p) => 
-        p.id === patientToUpdate.id 
-          ? { ...p, ...updatedPatientData }
-          : p
-      ));
-      setUpdateDialogOpen(false);
-      setPatientToUpdate(null);
-      setUpdatedPatientData({});
-    }
+    
+    setUpdatedPatientData({
+      name: patient.name,
+      email: patient.email,
+      phoneNumber: patient.phoneNumber,
+      whatsappNumber: patient.whatsappNumber,
+      address: patient.address || '',
+      status: patient.status
+    });
   };
 
   const handleExportCSV = () => {
+    if (!data?.data) return;
+    
     const headers = [
       "Name",
       "Email",
       "Phone",
+      "WhatsApp",
       "Address",
       "Status",
       "Created By",
@@ -184,15 +136,16 @@ export function PatientsList({ searchQuery, timeRange, statusFilter }: PatientsL
       "data:text/csv;charset=utf-8," +
       headers.join(",") +
       "\n" +
-      filteredPatients
+      data.data
         .map((patient) =>
           [
             patient.name,
             patient.email,
             patient.phoneNumber,
-            patient.address,
-            patient.converted ? "Converted" : "Not Converted",
-            patient.createdById.name,
+            patient.whatsappNumber || "",
+            patient.address || "",
+            patient.status,
+            patient.createdBy?.name || "",
             formatDate(patient.createdAt),
           ].join(",")
         )
@@ -201,14 +154,148 @@ export function PatientsList({ searchQuery, timeRange, statusFilter }: PatientsL
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "patients.csv");
+    link.setAttribute("download", `patients-${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  const handlePatientClick = (patientId: string) => {
-    router.push(`/admin/patients/${patientId}`);
+  const handleUpdatePatient = async () => {
+    if (!patientToUpdate || !updatedPatientData) return;
+    
+    try {
+      // Format phone numbers to include country code if not already present
+      const phoneNumber = updatedPatientData.phoneNumber?.startsWith('+') 
+        ? updatedPatientData.phoneNumber 
+        : `+91${updatedPatientData.phoneNumber}`;
+        
+      const whatsappNumber = updatedPatientData.whatsappNumber?.startsWith('+') 
+        ? updatedPatientData.whatsappNumber 
+        : updatedPatientData.whatsappNumber ? `+91${updatedPatientData.whatsappNumber}` : undefined;
+      
+      // Convert boolean to string to avoid JSON parsing issues
+      const patientData = {
+        name: updatedPatientData.name,
+        email: updatedPatientData.email,
+        phoneNumber,
+        whatsappNumber,
+        address: updatedPatientData.address || undefined,
+        status: updatedPatientData.status
+      };
+
+      console.log("Sending update data:", patientData); // Log the data being sent
+      
+      await updatePatient({
+        id: patientToUpdate.id,
+        patient: patientData
+      }).unwrap();
+      
+      showSuccessToast("Patient updated successfully");
+      setUpdateDialogOpen(false);
+    } catch (error) {
+      showErrorToast(getErrorMessage(error) || "Failed to update patient");
+      console.error("Update error:", error);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="overflow-x-auto">
+        <table className="w-full table-auto">
+          <thead className="bg-gray-50 dark:bg-gray-800">
+            <tr>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 min-w-[200px]">
+                Patient
+              </th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 min-w-[150px]">
+                Address
+              </th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 min-w-[120px]">
+                Status
+              </th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 min-w-[150px]">
+                Created By
+              </th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 min-w-[150px]">
+                Created At
+              </th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 min-w-[120px]">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+            {[...Array(5)].map((_, index) => (
+              <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                <td className="px-4 py-3 min-w-[200px]">
+                  <div className="flex flex-col gap-2">
+                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-3 w-24" />
+                    <Skeleton className="h-3 w-40" />
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 min-w-[150px]">
+                  <Skeleton className="h-5 w-28" />
+                </td>
+                <td className="px-4 py-3 text-sm min-w-[120px]">
+                  <Skeleton className="h-6 w-24 rounded-full" />
+                </td>
+                <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 min-w-[150px]">
+                  <Skeleton className="h-5 w-32" />
+                </td>
+                <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 min-w-[150px]">
+                  <div className="flex flex-col gap-1">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-3 w-16" />
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-sm min-w-[120px]">
+                  <div className="flex gap-2">
+                    <Skeleton className="h-8 w-8 rounded-md" />
+                    <Skeleton className="h-8 w-8 rounded-md" />
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <div className="p-4 border-t border-gray-200 dark:border-gray-800">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-5 w-48" />
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-9 w-24 rounded-md" />
+              <Skeleton className="h-5 w-36" />
+              <Skeleton className="h-9 w-24 rounded-md" />
+              <Skeleton className="h-9 w-28 rounded-md" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8">
+        <div className="text-red-500">Error loading patients</div>
+      </div>
+    );
+  }
+
+  const getStatusColor = (status: string) => {
+    switch(status) {
+      case 'CONVERTED':
+        return "bg-green-50 text-green-600 dark:bg-green-500/10 dark:text-green-400";
+      case 'ACTIVE':
+        return "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400";
+      case 'INACTIVE':
+        return "bg-yellow-50 text-yellow-600 dark:bg-yellow-500/10 dark:text-yellow-400";
+      case 'DELETED':
+        return "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400";
+      default:
+        return "bg-gray-50 text-gray-600 dark:bg-gray-500/10 dark:text-gray-400";
+    }
   };
 
   return (
@@ -238,7 +325,7 @@ export function PatientsList({ searchQuery, timeRange, statusFilter }: PatientsL
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-            {filteredPatients.map((patient) => (
+            {data?.data.map((patient) => (
               <tr key={patient.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                 <td className="px-4 py-3 min-w-[200px]">
                   <div className="flex flex-col">
@@ -257,15 +344,15 @@ export function PatientsList({ searchQuery, timeRange, statusFilter }: PatientsL
                   </div>
                 </td>
                 <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 min-w-[150px]">
-                  {patient.address}
+                  {patient.address || 'N/A'}
                 </td>
                 <td className="px-4 py-3 text-sm min-w-[120px]">
-                  <Badge className={getConversionStatusColor(patient.converted)}>
-                    {patient.converted ? "Converted" : "Not Converted"}
+                  <Badge className={getStatusColor(patient.status)}>
+                    {patient.status}
                   </Badge>
                 </td>
                 <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 min-w-[150px]">
-                  {patient.createdById?.name}
+                  {patient.createdBy?.name || 'N/A'}
                 </td>
                 <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 min-w-[150px]">
                   <div className="flex flex-col">
@@ -313,110 +400,39 @@ export function PatientsList({ searchQuery, timeRange, statusFilter }: PatientsL
         <div className="p-4 border-t border-gray-200 dark:border-gray-800">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-500 dark:text-gray-400">
-              Showing {filteredPatients.length} patients
+              Showing {data?.data.length || 0} of {data?.pagination.totalItems || 0} patients
             </div>
             <div className="flex items-center gap-2">
-              <button
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!data?.pagination.hasPreviousPage}
+                onClick={() => setPage(prev => Math.max(1, prev - 1))}
+              >
+                Previous
+              </Button>
+              <span className="text-sm text-gray-600 dark:text-gray-300">
+                Page {data?.pagination.currentPage || 1} of {data?.pagination.totalPages || 1}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!data?.pagination.hasNextPage}
+                onClick={() => setPage(prev => prev + 1)}
+              >
+                Next
+              </Button>
+              <Button
                 onClick={handleExportCSV}
                 className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               >
                 <Download className="h-4 w-4" />
                 Export CSV
-              </button>
+              </Button>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Update Dialog */}
-      <Dialog open={updateDialogOpen} onOpenChange={setUpdateDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Edit Patient Information</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Name
-              </Label>
-              <Input
-                id="name"
-                value={updatedPatientData.name || ''}
-                onChange={(e) =>
-                  setUpdatedPatientData((prev) => ({ ...prev, name: e.target.value }))
-                }
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="email" className="text-right">
-                Email
-              </Label>
-              <Input
-                id="email"
-                value={updatedPatientData.email || ''}
-                onChange={(e) =>
-                  setUpdatedPatientData((prev) => ({ ...prev, email: e.target.value }))
-                }
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="phone" className="text-right">
-                Phone
-              </Label>
-              <Input
-                id="phone"
-                value={updatedPatientData.phoneNumber || ''}
-                onChange={(e) =>
-                  setUpdatedPatientData((prev) => ({ ...prev, phoneNumber: e.target.value }))
-                }
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="address" className="text-right">
-                Address
-              </Label>
-              <Input
-                id="address"
-                value={updatedPatientData.address || ''}
-                onChange={(e) =>
-                  setUpdatedPatientData((prev) => ({ ...prev, address: e.target.value }))
-                }
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="status" className="text-right">
-                Status
-              </Label>
-              <div className="col-span-3">
-                <select
-                  id="status"
-                  value={updatedPatientData.converted ? "converted" : "not-converted"}
-                  onChange={(e) =>
-                    setUpdatedPatientData((prev) => ({
-                      ...prev,
-                      converted: e.target.value === "converted",
-                    }))
-                  }
-                  className="w-full rounded-md border border-gray-300 bg-transparent px-3 py-2"
-                >
-                  <option value="converted">Converted</option>
-                  <option value="not-converted">Not Converted</option>
-                </select>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setUpdateDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={confirmUpdate}>Save changes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
@@ -438,6 +454,100 @@ export function PatientsList({ searchQuery, timeRange, statusFilter }: PatientsL
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={updateDialogOpen} onOpenChange={setUpdateDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Edit Patient</DialogTitle>
+          </DialogHeader>
+          
+          {patientToUpdate && (
+            <div className="py-4">
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                handleUpdatePatient();
+              }}>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-name">Name</Label>
+                    <Input
+                      id="edit-name"
+                      value={updatedPatientData.name || ''}
+                      onChange={(e) => setUpdatedPatientData({...updatedPatientData, name: e.target.value})}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-email">Email</Label>
+                    <Input
+                      id="edit-email"
+                      type="email"
+                      value={updatedPatientData.email || ''}
+                      onChange={(e) => setUpdatedPatientData({...updatedPatientData, email: e.target.value})}
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-phone">Phone Number</Label>
+                    <Input
+                      id="edit-phone"
+                      value={updatedPatientData.phoneNumber || ''}
+                      onChange={(e) => setUpdatedPatientData({...updatedPatientData, phoneNumber: e.target.value})}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-whatsapp">WhatsApp Number</Label>
+                    <Input
+                      id="edit-whatsapp"
+                      value={updatedPatientData.whatsappNumber || ''}
+                      onChange={(e) => setUpdatedPatientData({...updatedPatientData, whatsappNumber: e.target.value})}
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid gap-2 mb-4">
+                  <Label htmlFor="edit-address">Address</Label>
+                  <Input
+                    id="edit-address"
+                    value={updatedPatientData.address || ''}
+                    onChange={(e) => setUpdatedPatientData({...updatedPatientData, address: e.target.value})}
+                  />
+                </div>
+                
+                <div className="flex items-center gap-2 mb-6">
+                  <Label htmlFor="edit-status">Status</Label>
+                  <Select
+                    value={updatedPatientData.status || 'ACTIVE'}
+                    onValueChange={(value) => setUpdatedPatientData({...updatedPatientData, status: value as 'ACTIVE' | 'INACTIVE' | 'CONVERTED' | 'DELETED'})}
+                  >
+                    <SelectTrigger id="edit-status" className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ACTIVE">Active</SelectItem>
+                      <SelectItem value="INACTIVE">Inactive</SelectItem>
+                      <SelectItem value="CONVERTED">Converted</SelectItem>
+                      <SelectItem value="DELETED">Deleted</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="flex justify-end gap-3">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setUpdateDialogOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit">Update Patient</Button>
+                </div>
+              </form>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

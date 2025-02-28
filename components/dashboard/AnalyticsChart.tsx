@@ -2,16 +2,13 @@ import { Card } from "@/components/ui/card";
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart } from "recharts";
 import { useTheme } from "next-themes";
 
-const data = [
-  { name: "Dec", enquiries: 150, appointments: 100 },
-  { name: "Jan", enquiries: 250, appointments: 180 },
-  { name: "Feb", enquiries: 350, appointments: 220 },
-  { name: "Mar", enquiries: 450, appointments: 300 },
-  { name: "Apr", enquiries: 300, appointments: 280 },
-  { name: "May", enquiries: 200, appointments: 190 },
-  { name: "Jun", enquiries: 350, appointments: 250 },
-  { name: "Jul", enquiries: 500, appointments: 350 },
-];
+interface AnalyticsChartProps {
+  data: {
+    month: string;
+    appointments: number;
+    enquiries: number;
+  }[];
+}
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -30,9 +27,22 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-export function AnalyticsChart() {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
+export function AnalyticsChart({ data }: AnalyticsChartProps) {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+  
+  // Format month string (e.g., "2025-02" to "Feb")
+  const formatMonth = (monthStr: string) => {
+    const date = new Date(monthStr + "-01"); // Add day to make a valid date
+    return date.toLocaleString('default', { month: 'short' });
+  };
+  
+  // Format the data for the chart
+  const chartData = data.map(item => ({
+    name: formatMonth(item.month),
+    enquiries: item.enquiries,
+    appointments: item.appointments
+  }));
 
   return (
     <Card className="col-span-2 p-6 border-none bg-white dark:bg-gray-900 transition-colors">
@@ -40,12 +50,11 @@ export function AnalyticsChart() {
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Enquiries & Appointments Overview</h3>
         <div className="flex gap-2">
           <button className="text-sm text-purple-800 dark:text-purple-400 font-medium">Monthly Enquiries</button>
-
         </div>
       </div>
       <div className="h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+          <ComposedChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
             <defs>
               <linearGradient id="colorEnquiries" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor={isDark ? "#7c3aed" : "#8b5cf6"} stopOpacity={0.4} />

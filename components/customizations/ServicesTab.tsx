@@ -1,143 +1,292 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { ServiceDialog } from "./ServiceDialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-
-interface Service {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  duration: string;
-}
-
-const mockServices: Service[] = [
-  {
-    id: "1",
-    name: "General Checkup",
-    description: "Complete body checkup",
-    price: 1000,
-    duration: "30 mins",
-  },
-  // Add more mock services...
-];
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  useGetAllServicesQuery,
+  useCreateServiceMutation,
+  useUpdateServiceMutation,
+  useDeleteServiceMutation,
+  ServiceEntity
+} from "@/lib/redux/services/customizationApi";
+import { showSuccessToast, showErrorToast } from "@/lib/utils/toast";
+import { getErrorMessage } from "@/lib/api/apiUtils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function ServicesTab() {
-  const [services, setServices] = useState<Service[]>(mockServices);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [serviceToEdit, setServiceToEdit] = useState<Service | null>(null);
-  const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const { data: services, isLoading } = useGetAllServicesQuery();
+  const [createService, { isLoading: isCreating }] = useCreateServiceMutation();
+  const [updateService, { isLoading: isUpdating }] = useUpdateServiceMutation();
+  const [deleteService, { isLoading: isDeleting }] = useDeleteServiceMutation();
 
-  const handleSave = (service: Service) => {
-    if (serviceToEdit) {
-      setServices(services.map(s => s.id === service.id ? service : s));
-    } else {
-      setServices([...services, { ...service, id: Date.now().toString() }]);
+  const [newServiceName, setNewServiceName] = useState("");
+  const [editServiceId, setEditServiceId] = useState<string | null>(null);
+  const [editServiceName, setEditServiceName] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [serviceToDelete, setServiceToDelete] = useState<ServiceEntity | null>(null);
+
+  const handleAddService = async () => {
+    if (!newServiceName.trim()) return;
+    
+    try {
+      await createService({ name: newServiceName }).unwrap();
+      showSuccessToast("Service added successfully");
+      setNewServiceName("");
+    } catch (error) {
+      showErrorToast(getErrorMessage(error) || "Failed to add service");
     }
-    setIsDialogOpen(false);
-    setServiceToEdit(null);
   };
 
-  const handleEdit = (service: Service) => {
-    setServiceToEdit(service);
-    setIsDialogOpen(true);
+  const handleEditService = (service: ServiceEntity) => {
+    setEditServiceId(service.id);
+    setEditServiceName(service.name);
   };
 
-  const handleDelete = (service: Service) => {
+  const handleSaveEdit = async (id: string) => {
+    if (!editServiceName.trim()) return;
+    
+    try {
+      await updateService({ id, service: { name: editServiceName } }).unwrap();
+      showSuccessToast("Service updated successfully");
+      setEditServiceId(null);
+    } catch (error) {
+      showErrorToast(getErrorMessage(error) || "Failed to update service");
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditServiceId(null);
+  };
+
+  const handleDeleteClick = (service: ServiceEntity) => {
     setServiceToDelete(service);
-    setIsDeleteDialogOpen(true);
+    setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
-    if (serviceToDelete) {
-      setServices(services.filter(s => s.id !== serviceToDelete.id));
-      setIsDeleteDialogOpen(false);
+  const confirmDelete = async () => {
+    if (!serviceToDelete) return;
+    
+    try {
+      await deleteService(serviceToDelete.id).unwrap();
+      showSuccessToast("Service deleted successfully");
+      setDeleteDialogOpen(false);
       setServiceToDelete(null);
+    } catch (error) {
+      showErrorToast(getErrorMessage(error) || "Failed to delete service");
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <Skeleton className="h-6 w-44 mb-2" />
+          <Skeleton className="h-4 w-full max-w-md mb-4" />
+        </div>
+
+        <div className="flex gap-2 mb-6">
+          <Skeleton className="h-10 w-60" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+
+        <div className="border rounded-lg overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-800">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Name
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Created At
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+              {[...Array(5)].map((_, index) => (
+                <tr key={index}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <Skeleton className="h-5 w-32" />
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <Skeleton className="h-5 w-24" />
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                    <div className="flex justify-end gap-2">
+                      <Skeleton className="h-8 w-8 rounded-md" />
+                      <Skeleton className="h-8 w-8 rounded-md" />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-medium">Services List</h3>
-        <Button
-          onClick={() => setIsDialogOpen(true)}
-          className="flex items-center gap-2 bg-purple-600 text-white hover:bg-purple-700"
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-2">
+          Service Options
+        </h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          Manage service options that can be used across the application
+        </p>
+      </div>
+
+      <div className="flex gap-2 mb-6">
+        <Input
+          placeholder="Add new service..."
+          value={newServiceName}
+          onChange={(e) => setNewServiceName(e.target.value)}
+          className="max-w-xs"
+        />
+        <Button 
+          onClick={handleAddService} 
+          disabled={isCreating || !newServiceName.trim()}
         >
-          <Plus className="h-4 w-4" /> Add Service
+          {isCreating ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Adding...
+            </>
+          ) : (
+            <>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Service
+            </>
+          )}
         </Button>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead>Price</TableHead>
-            <TableHead>Duration</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {services.map((service) => (
-            <TableRow key={service.id}>
-              <TableCell>{service.name}</TableCell>
-              <TableCell>{service.description}</TableCell>
-              <TableCell>₹{service.price}</TableCell>
-              <TableCell>{service.duration}</TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleEdit(service)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDelete(service)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <div className="border rounded-lg overflow-hidden">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead className="bg-gray-50 dark:bg-gray-800">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Name
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Created At
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+            {services?.map((service) => (
+              <tr key={service.id}>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  {editServiceId === service.id ? (
+                    <div className="flex gap-2 items-center">
+                      <Input
+                        value={editServiceName}
+                        onChange={(e) => setEditServiceName(e.target.value)}
+                        className="max-w-xs"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleSaveEdit(service.id)}
+                        disabled={isUpdating || !editServiceName.trim()}
+                      >
+                        <Check className="h-4 w-4 text-green-600" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleCancelEdit}
+                      >
+                        <X className="h-4 w-4 text-red-600" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <span className="text-sm text-gray-900 dark:text-gray-100">
+                      {service.name}
+                    </span>
+                  )}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  {new Date(service.createdAt).toLocaleDateString()}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEditService(service)}
+                      disabled={editServiceId !== null}
+                    >
+                      <Pencil className="h-4 w-4 text-blue-600" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteClick(service)}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-600" />
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {services?.length === 0 && (
+              <tr>
+                <td
+                  colSpan={3}
+                  className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400"
+                >
+                  No service options found. Add your first one now.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
-      <ServiceDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        service={serviceToEdit}
-        onSave={handleSave}
-      />
-
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the service.
+              This action cannot be undone. This will permanently delete the service
+              &quot;{serviceToDelete?.name}&quot; from your account.
+              This could affect entities that are currently using this service.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

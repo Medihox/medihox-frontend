@@ -5,6 +5,10 @@ import { setupListeners } from '@reduxjs/toolkit/query';
 import authReducer from './slices/authSlice';
 import { authApi } from './services/authApi';
 import { appointmentApi } from './services/appointmentApi';
+import { patientApi } from './services/patientApi';
+import { userApi } from './services/userApi';
+import { customizationApi } from './services/customizationApi';
+import { dashboardApi } from './services/dashboardApi';
 
 // Create a custom storage object that checks for browser environment
 const createNoopStorage = () => {
@@ -36,6 +40,10 @@ const rootReducer = combineReducers({
   auth: authReducer,
   [authApi.reducerPath]: authApi.reducer,
   [appointmentApi.reducerPath]: appointmentApi.reducer,
+  [patientApi.reducerPath]: patientApi.reducer,
+  [userApi.reducerPath]: userApi.reducer,
+  [customizationApi.reducerPath]: customizationApi.reducer,
+  [dashboardApi.reducerPath]: dashboardApi.reducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
@@ -47,7 +55,14 @@ export const store = configureStore({
       serializableCheck: {
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
-    }).concat(authApi.middleware, appointmentApi.middleware),
+    }).concat(
+      authApi.middleware, 
+      appointmentApi.middleware, 
+      patientApi.middleware, 
+      userApi.middleware,
+      customizationApi.middleware,
+      dashboardApi.middleware
+    ),
 });
 
 setupListeners(store.dispatch);

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import OnboardingForm from "./OnboardingForm"
 import LoadingScreen from "../../components/LoadingScreen"
-import toast from "react-hot-toast"
+import { showSuccessToast, showErrorToast, showInfoToast } from "@/lib/utils/toast"
 import { useCompleteOnboardingMutation } from "@/lib/redux/services/authApi"
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks"
 import { setOnboardingCompleted } from "@/lib/redux/slices/authSlice"
@@ -25,14 +25,14 @@ export default function OnboardingPage() {
   useEffect(() => {
     // If user is authenticated, redirect to dashboard
     if (isAuthenticated || accessToken) {
-      toast.error("You are already logged in")
+      showErrorToast("You are already logged in")
       router.push("/admin/dashboard")
       return
     }
     
     // If onboarding is already completed, redirect to login
     if (hasCompletedOnboarding) {
-      toast.info("You have already completed onboarding")
+      showInfoToast("You have already completed onboarding")
       router.push("/login")
       return
     }
@@ -67,7 +67,7 @@ export default function OnboardingPage() {
       // Set cookies for middleware
       document.cookie = "hasCompletedOnboarding=true; path=/; max-age=31536000"
       
-      toast.success("Onboarding completed successfully!")
+      showSuccessToast("Onboarding completed successfully!")
       
       // Redirect to login page instead of dashboard
       setTimeout(() => {
@@ -75,7 +75,7 @@ export default function OnboardingPage() {
       }, 500)
     } catch (error) {
       setIsSubmitting(false)
-      toast.error(getErrorMessage(error) || "Onboarding failed. Please try again.")
+      showErrorToast(getErrorMessage(error) || "Onboarding failed. Please try again.")
     }
   }
 

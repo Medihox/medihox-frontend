@@ -183,6 +183,7 @@ export const authApi = createApi({
         url: 'auth/login',
         method: 'POST',
         body: credentials,
+        credentials: 'include',
       }),
     }),
 
@@ -244,14 +245,14 @@ export const authApi = createApi({
 
     getUserProfile: builder.query<User, void>({
       query: () => ({
-        url: 'users/profile',
+        url: '/profile',
         method: 'GET',
       }),
     }),
 
     updateProfile: builder.mutation<User, UpdateProfileRequest>({
       query: (data) => ({
-        url: 'users/profile',
+        url: '/profile',
         method: 'PUT',
         body: data,
       }),

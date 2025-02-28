@@ -6,7 +6,7 @@ import { NewPatientDialog } from "./NewPatientDialog";
 import { Search, Filter, Plus } from "lucide-react";
 
 export type FilterTimeRange = 'all' | 'today' | 'week' | 'month';
-export type PatientStatus = 'all' | 'converted' | 'not-converted';
+export type PatientStatus = 'all' | 'ACTIVE' | 'INACTIVE' | 'CONVERTED' | 'DELETED';
 
 export default function PatientsPage() {
   const [isNewPatientOpen, setIsNewPatientOpen] = useState(false);
@@ -83,8 +83,10 @@ export default function PatientsPage() {
                   className="px-4 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-600 dark:text-gray-300"
                 >
                   <option value="all">All Status</option>
-                  <option value="converted">Converted</option>
-                  <option value="not-converted">Not Converted</option>
+                  <option value="ACTIVE">Active</option>
+                  <option value="INACTIVE">Inactive</option>
+                  <option value="CONVERTED">Converted</option>
+                  <option value="DELETED">Deleted</option>
                 </select>
               </div>
             </div>

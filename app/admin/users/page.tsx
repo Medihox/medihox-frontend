@@ -34,7 +34,7 @@ const roles: Role[] = ["admin", "doctor", "receptionist", "staff"];
 const modules = ["users", "appointments", "inquiries"] as const;
 
 export type FilterTimeRange = 'all' | 'today' | 'week' | 'month';
-export type UserStatus = 'all' | 'active' | 'inactive';
+export type UserStatus = 'all' | 'ACTIVE' | 'INACTIVE';
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>(mockUsers);
@@ -144,8 +144,8 @@ export default function UsersPage() {
                   className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300"
                 >
                   <option value="all">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
+                  <option value="ACTIVE">Active</option>
+                  <option value="INACTIVE">Inactive</option>
                 </select>
               </div>
             </div>
