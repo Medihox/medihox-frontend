@@ -18,6 +18,7 @@ import { Settings, Loader2, Upload } from "lucide-react";
 import { useGetUserProfileQuery, useUpdateProfileMutation } from "@/lib/redux/services/authApi";
 import { getErrorMessage } from "@/lib/api/apiUtils";
 import Image from "next/image";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface GeneralSettings {
   organizationName: string;
@@ -116,22 +117,6 @@ export default function SettingsPage() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-red-500">Error loading profile data. Please try again.</p>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-200 dark:bg-gray-800 p-8">
       <div className="mx-auto max-w-7xl">
@@ -156,69 +141,108 @@ export default function SettingsPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {settings.general.organizationLogo && (
-                    <div className="flex flex-col items-center space-y-2 mb-6">
-                      <Label>Organization Logo</Label>
-                      <div className="w-32 h-32 relative rounded-md overflow-hidden border border-gray-200">
-                        <Image 
-                          src={settings.general.organizationLogo} 
-                          alt="Organization Logo" 
-                          width={128}
-                          height={128}
-                          style={{ objectFit: "cover" }}
+                  {isLoading ? (
+                    // Skeleton UI for the general tab content
+                    <>
+                      {/* Organization Logo Skeleton */}
+                      <div className="flex flex-col items-center space-y-2 mb-6">
+                        <Skeleton className="h-4 w-32 mb-2" />
+                        <Skeleton className="w-32 h-32 rounded-md" />
+                      </div>
+                      
+                      {/* Name Field Skeleton */}
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-20" />
+                        <Skeleton className="h-10 w-full" />
+                      </div>
+                      
+                      {/* Email Field Skeleton */}
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-20" />
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-4 w-64" />
+                      </div>
+                      
+                      {/* Organization Name Field Skeleton */}
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-10 w-full" />
+                      </div>
+                      
+                      {/* Phone Field Skeleton */}
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-20" />
+                        <Skeleton className="h-10 w-full" />
+                      </div>
+                    </>
+                  ) : (
+                    // Actual content when loaded
+                    <>
+                      {settings.general.organizationLogo && (
+                        <div className="flex flex-col items-center space-y-2 mb-6">
+                          <Label>Organization Logo</Label>
+                          <div className="w-32 h-32 relative rounded-md overflow-hidden border border-gray-200">
+                            <Image 
+                              src={settings.general.organizationLogo} 
+                              alt="Organization Logo" 
+                              width={128}
+                              height={128}
+                              style={{ objectFit: "cover" }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Name</Label>
+                        <Input
+                          id="name"
+                          name="name"
+                          value={settings.general.name}
+                          className="dark:bg-gray-900 dark:border-gray-800"
+                          onChange={(e) =>
+                            handleChange("general", "name", e.target.value)
+                          }
                         />
                       </div>
-                    </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email</Label>
+                        <Input
+                          id="email"
+                          name="email"
+                          value={settings.general.email}
+                          className="dark:bg-gray-900 dark:border-gray-800"
+                          readOnly
+                          disabled
+                        />
+                        <p className="text-xs text-gray-500">Email address cannot be changed</p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="organizationName">Organization Name</Label>
+                        <Input
+                          id="organizationName"
+                          name="organizationName"
+                          value={settings.general.organizationName}
+                          className="dark:bg-gray-900 dark:border-gray-800"
+                          onChange={(e) =>
+                            handleChange("general", "organizationName", e.target.value)
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="phone">Phone</Label>
+                        <Input
+                          id="phone"
+                          name="phone"
+                          value={settings.general.phone}
+                          className="dark:bg-gray-900 dark:border-gray-800"
+                          onChange={(e) =>
+                            handleChange("general", "phone", e.target.value)
+                          }
+                        />
+                      </div>
+                    </>
                   )}
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Name</Label>
-                    <Input
-                      id="name"
-                      name="name"
-                      value={settings.general.name}
-                      className="dark:bg-gray-900 dark:border-gray-800"
-                      onChange={(e) =>
-                        handleChange("general", "name", e.target.value)
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      value={settings.general.email}
-                      className="dark:bg-gray-900 dark:border-gray-800"
-                      readOnly
-                      disabled
-                    />
-                    <p className="text-xs text-gray-500">Email address cannot be changed</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="organizationName">Organization Name</Label>
-                    <Input
-                      id="organizationName"
-                      name="organizationName"
-                      value={settings.general.organizationName}
-                      className="dark:bg-gray-900 dark:border-gray-800"
-                      onChange={(e) =>
-                        handleChange("general", "organizationName", e.target.value)
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone</Label>
-                    <Input
-                      id="phone"
-                      name="phone"
-                      value={settings.general.phone}
-                      className="dark:bg-gray-900 dark:border-gray-800"
-                      onChange={(e) =>
-                        handleChange("general", "phone", e.target.value)
-                      }
-                    />
-                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -307,7 +331,7 @@ export default function SettingsPage() {
           <Button 
             className="mt-4" 
             onClick={handleSaveSettings}
-            disabled={isUpdating}
+            disabled={isLoading || isUpdating}
           >
             {isUpdating ? (
               <>

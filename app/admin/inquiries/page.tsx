@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppointmentsList } from "@/components/appointments/AppointmentsList";
 import { NewAppointmentDialog } from "@/components/appointments/NewAppointmentDialog";
 import { Search, Filter, Plus } from "lucide-react";
+import { useGetAllStatusQuery } from "@/lib/redux/services/customizationApi";
 
 export type FilterTimeRange = 'all' | 'today' | 'week' | 'month';
-export type AppointmentStatus = 'all' | 'scheduled' | 'completed' | 'cancelled' | 'enquired' | 'followup' | 'cost-issues';
+export type AppointmentStatus = string;
 
 export default function InquiriesPage() {
   const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
@@ -14,6 +15,31 @@ export default function InquiriesPage() {
   const [timeRange, setTimeRange] = useState<FilterTimeRange>("all");
   const [statusFilter, setStatusFilter] = useState<AppointmentStatus>("enquired");
   const [showFilters, setShowFilters] = useState(false);
+  const [availableStatuses, setAvailableStatuses] = useState<string[]>([]);
+  const [appointmentToEdit, setAppointmentToEdit] = useState<any>(null);
+  
+  // Fetch all statuses from the API
+  const { data: statuses } = useGetAllStatusQuery();
+  
+  // Filter out only enquiry-related statuses
+  useEffect(() => {
+    if (statuses) {
+      const enquiryStatuses = statuses.filter(status => 
+        status.name.toLowerCase().includes('enquir') || 
+        status.name.toLowerCase().includes('followup') ||
+        status.name.toLowerCase().includes('cost') ||
+        status.name.toLowerCase().includes('issue')
+      );
+      
+      // Set available statuses for filtering
+      setAvailableStatuses(enquiryStatuses.map(s => s.name));
+      
+      // Set default status filter if available
+      if (enquiryStatuses.length > 0 && statusFilter === 'enquired') {
+        setStatusFilter(enquiryStatuses[0].name);
+      }
+    }
+  }, [statuses]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -24,7 +50,12 @@ export default function InquiriesPage() {
   };
 
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setStatusFilter(e.target.value as AppointmentStatus);
+    setStatusFilter(e.target.value);
+  };
+
+  const handleEditInquiry = (inquiry: any) => {
+    setAppointmentToEdit(inquiry);
+    setIsNewAppointmentOpen(true);
   };
 
   return (
@@ -40,7 +71,7 @@ export default function InquiriesPage() {
             className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
           >
             <Plus className="h-4 w-4" />
-            New Enquiries
+            New Enquiry
           </button>
         </div>
 
@@ -54,7 +85,7 @@ export default function InquiriesPage() {
                     type="text"
                     value={searchQuery}
                     onChange={handleSearch}
-                    placeholder="Search appointments..."
+                    placeholder="Search enquiries..."
                     className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400"
                   />
                 </div>
@@ -82,10 +113,12 @@ export default function InquiriesPage() {
                   onChange={handleStatusChange}
                   className="px-4 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-600 dark:text-gray-300"
                 >
-                  <option value="all">All Status</option>
-                  <option value="enquired">Enquired</option>
-                  <option value="followup">Followup</option>
-                  <option value="cost-issues">Cost issue</option>
+                  <option value="all">All Enquiries</option>
+                  {availableStatuses.map(status => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -134,14 +167,22 @@ export default function InquiriesPage() {
           <AppointmentsList 
             searchQuery={searchQuery}
             timeRange={timeRange}
-            statusFilter={statusFilter}
+            statusFilter={statusFilter as any}
+            showOnlyEnquiries={true}
+            onEdit={handleEditInquiry}
           />
         </div>
       </div>
 
       <NewAppointmentDialog 
         open={isNewAppointmentOpen}
-        onOpenChange={setIsNewAppointmentOpen}
+        onOpenChange={(open) => {
+          setIsNewAppointmentOpen(open);
+          if (!open) setAppointmentToEdit(null);
+        }}
+        isEnquiry={true}
+        initialData={appointmentToEdit}
+        appointmentId={appointmentToEdit?.id}
       />
     </div>
   );

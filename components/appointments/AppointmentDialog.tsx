@@ -14,6 +14,10 @@ import { Loader2 } from "lucide-react";
 import { useCreateAppointmentMutation, useUpdateAppointmentMutation, useDeleteAppointmentMutation } from "@/lib/redux/services/appointmentApi";
 import toast from "react-hot-toast";
 import { getErrorMessage } from "@/lib/api/apiUtils";
+import { 
+  useGetAllServicesQuery,
+  useGetAllStatusQuery 
+} from "@/lib/redux/services/customizationApi";
 
 interface Appointment {
   id: string;
@@ -68,6 +72,10 @@ export function AppointmentDialog({
   const [deleteAppointment] = useDeleteAppointmentMutation();
   const [activeTab, setActiveTab] = useState("details");
   
+  // Fetch custom status and service options
+  const { data: services, isLoading: isLoadingServices } = useGetAllServicesQuery();
+  const { data: statuses, isLoading: isLoadingStatuses } = useGetAllStatusQuery();
+  
   const [resolver, setResolver] = useState(() => zodResolver(appointmentFormSchema));
 
   const { control, register, handleSubmit, formState: { errors }, reset } = useForm<FormValues>({
@@ -105,7 +113,7 @@ export function AppointmentDialog({
         patientEmail: appointment.patient?.email || "",
         patientPhone: appointment.patient?.phoneNumber || "",
         date: dateString,
-        time: appointment.time || "",
+        time: appointment.time || "00:00",
         status: appointment.status || "Scheduled",
         service: appointment.service || "General Checkup",
         source: appointment.source || "WEBSITE",
@@ -232,6 +240,7 @@ export function AppointmentDialog({
                       id="time"
                       type="time"
                       {...register("time")}
+                      defaultValue="00:00"
                     />
                   </div>
                 </div>
@@ -245,14 +254,26 @@ export function AppointmentDialog({
                       <Select 
                         onValueChange={field.onChange} 
                         value={field.value}
+                        disabled={isLoadingServices}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select service" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="General Checkup">General Checkup</SelectItem>
-                          <SelectItem value="Dental Care">Dental Care</SelectItem>
-                          <SelectItem value="Eye Care">Eye Care</SelectItem>
+                          {isLoadingServices ? (
+                            <SelectItem value="loading">Loading services...</SelectItem>
+                          ) : (
+                            <>
+                              {services?.map(service => (
+                                <SelectItem key={service.id} value={service.name}>
+                                  {service.name}
+                                </SelectItem>
+                              ))}
+                              {(!services || services.length === 0) && (
+                                <SelectItem value="no-services">No services available</SelectItem>
+                              )}
+                            </>
+                          )}
                         </SelectContent>
                       </Select>
                     )}
@@ -272,14 +293,26 @@ export function AppointmentDialog({
                         <Select 
                           onValueChange={field.onChange} 
                           value={field.value}
+                          disabled={isLoadingStatuses}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select status" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Scheduled">Scheduled</SelectItem>
-                            <SelectItem value="Completed">Completed</SelectItem>
-                            <SelectItem value="Cancelled">Cancelled</SelectItem>
+                            {isLoadingStatuses ? (
+                              <SelectItem value="loading">Loading statuses...</SelectItem>
+                            ) : (
+                              <>
+                                {statuses?.map(status => (
+                                  <SelectItem key={status.id} value={status.name}>
+                                    {status.name}
+                                  </SelectItem>
+                                ))}
+                                {(!statuses || statuses.length === 0) && (
+                                  <SelectItem value="no-statuses">No statuses available</SelectItem>
+                                )}
+                              </>
+                            )}
                           </SelectContent>
                         </Select>
                       )}
@@ -323,7 +356,7 @@ export function AppointmentDialog({
                   {appointment ? (
                     <Button
                       type="button"
-                      disabled={isUpdating}
+                      disabled={isUpdating || isLoadingServices || isLoadingStatuses}
                       className="flex-1 bg-purple-600 text-white hover:bg-purple-700"
                       onClick={handleSubmit(onSubmit)}
                     >

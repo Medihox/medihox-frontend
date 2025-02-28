@@ -2,241 +2,363 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Calendar, Mail, MapPin, Phone, Clock } from "lucide-react";
+import { 
+  useGetPatientByIdQuery,
+  useDeletePatientMutation 
+} from "@/lib/redux/services/patientApi";
+import { 
+  Phone, Mail, MapPin, Calendar, User, 
+  Check, X, ArrowLeft, Trash2, Pencil, Loader2 
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { showSuccessToast, showErrorToast } from "@/lib/utils/toast";
+import { getErrorMessage } from "@/lib/api/apiUtils";
+import { Skeleton } from "@/components/ui/skeleton";
 
-interface Appointment {
-  id: string;
-  appointmentDate: string;
-  appointmentTime: string;
-  service: string;
-  status: string;
-  beforeTreatmentImages?: string[];
-  afterTreatmentImages?: string[];
-  notes?: string;
-  createdAt: string;
-}
-
-interface Patient {
-  id: string;
-  name: string;
-  email: string;
-  phoneNumber: string;
-  address: string;
-  converted: boolean;
-  appointments: Appointment[];
-  createdById: {
-    id: string;
-    name: string;
-    email: string;
-    role: string;
-    status: string;
-    createdAt: string;
-  };
-  createdAt: string;
-}
+const getStatusColor = (status: string) => {
+  switch(status) {
+    case 'CONVERTED':
+      return "bg-green-50 text-green-600 dark:bg-green-500/10 dark:text-green-400";
+    case 'ACTIVE':
+      return "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400";
+    case 'INACTIVE':
+      return "bg-yellow-50 text-yellow-600 dark:bg-yellow-500/10 dark:text-yellow-400";
+    case 'DELETED':
+      return "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400";
+    default:
+      return "bg-gray-50 text-gray-600 dark:bg-gray-500/10 dark:text-gray-400";
+  }
+};
 
 export default function PatientDetailsPage() {
   const router = useRouter();
   const params = useParams();
-  const [patient, setPatient] = useState<Patient | null>(null);
-  const [loading, setLoading] = useState(true);
+  const patientId = params.id as string;
+  
+  const { data: patient, isLoading, error } = useGetPatientByIdQuery(patientId);
+  const [deletePatient, { isLoading: isDeleting }] = useDeletePatientMutation();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
-    // This is mock data - replace with actual API call
-    const mockPatient: Patient = {
-      id: params.id as string,
-      name: "John Doe",
-      email: "john@example.com",
-      phoneNumber: "1234567890",
-      address: "123 Main St, New York, USA",
-      converted: params.id === "2",
-      appointments: [
-        {
-          id: "a1",
-          appointmentDate: "2024-04-15",
-          appointmentTime: "10:00",
-          service: "Dental Checkup",
-          status: "Completed",
-          beforeTreatmentImages: [
-            "https://picsum.photos/seed/before1/400/400",
-            "https://picsum.photos/seed/before2/400/400"
-          ],
-          afterTreatmentImages: [
-            "https://picsum.photos/seed/after1/400/400",
-            "https://picsum.photos/seed/after2/400/400"
-          ],
-          notes: "Regular checkup completed",
-          createdAt: "2024-04-15T10:00:00Z"
-        },
-        {
-          id: "a2",
-          appointmentDate: "2024-04-20",
-          appointmentTime: "14:30",
-          service: "Follow-up",
-          status: "Scheduled",
-          notes: "Follow-up appointment",
-          createdAt: "2024-04-15T11:00:00Z"
-        }
-      ],
-      createdById: {
-        id: "u1",
-        name: "Dr. Smith",
-        email: "dr.smith@example.com",
-        role: "doctor",
-        status: "active",
-        createdAt: "2024-01-01T10:00:00Z",
-      },
-      createdAt: "2024-01-20T10:00:00Z",
-    };
+    if (error) {
+      showErrorToast("Error loading patient details");
+      router.push("/admin/patients");
+    }
+  }, [error, router]);
 
-    setPatient(mockPatient);
-    setLoading(false);
-  }, [params.id]);
-
-  const handleAppointmentClick = (appointmentId: string) => {
-    router.push(`/admin/appointments/${appointmentId}`);
+  const handleEdit = () => {
+    router.push(`/admin/patients/edit/${patientId}`);
   };
 
-  if (loading) {
+  const confirmDelete = async () => {
+    try {
+      await deletePatient(patientId).unwrap();
+      showSuccessToast("Patient deleted successfully");
+      router.push("/admin/patients");
+    } catch (error) {
+      showErrorToast(getErrorMessage(error) || "Failed to delete patient");
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-8">
-        <div className="animate-pulse">Loading...</div>
+        <div className="mb-8">
+          <Skeleton className="h-10 w-36 mb-4" />
+          
+          <div className="flex justify-between items-center">
+            <Skeleton className="h-8 w-48" />
+            <div className="flex gap-2">
+              <Skeleton className="h-10 w-24" />
+              <Skeleton className="h-10 w-24" />
+            </div>
+          </div>
+        </div>
+        
+        <div className="grid md:grid-cols-3 gap-6">
+          <div className="col-span-2">
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 p-6">
+              <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
+                <div className="flex-1">
+                  <Skeleton className="h-7 w-64 mb-2" />
+                  <Skeleton className="h-6 w-28 rounded-full" />
+                </div>
+              </div>
+              
+              <div className="grid gap-4">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-4 w-4" />
+                  <Skeleton className="h-5 w-32" />
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-4 w-4" />
+                  <Skeleton className="h-5 w-48" />
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-4 w-4" />
+                  <Skeleton className="h-5 w-64" />
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-4 w-4" />
+                  <Skeleton className="h-5 w-80" />
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div>
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 p-6">
+              <Skeleton className="h-6 w-40 mb-4" />
+              
+              <div className="space-y-6">
+                <div>
+                  <Skeleton className="h-4 w-24 mb-1" />
+                  <div className="flex items-center gap-2 mt-1">
+                    <Skeleton className="h-4 w-4" />
+                    <Skeleton className="h-5 w-32" />
+                  </div>
+                </div>
+                
+                <div>
+                  <Skeleton className="h-4 w-24 mb-1" />
+                  <div className="flex items-center gap-2 mt-1">
+                    <Skeleton className="h-4 w-4" />
+                    <Skeleton className="h-5 w-48" />
+                  </div>
+                </div>
+                
+                <div>
+                  <Skeleton className="h-4 w-24 mb-1" />
+                  <div className="flex items-center gap-2 mt-1">
+                    <Skeleton className="h-4 w-4" />
+                    <Skeleton className="h-5 w-48" />
+                  </div>
+                </div>
+                
+                <div>
+                  <Skeleton className="h-4 w-16 mb-1" />
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-5 w-5 rounded-full" />
+                    <Skeleton className="h-5 w-24" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!patient) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-8">
-        <div className="text-red-500">Patient not found</div>
+      <div className="h-screen flex flex-col items-center justify-center">
+        <div className="text-xl text-gray-700 dark:text-gray-300 mb-4">Patient not found</div>
+        <Button onClick={() => router.push("/admin/patients")}>
+          Back to Patients
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors">
-      <div className="p-8">
-        <Button
-          variant="ghost"
-          onClick={() => router.back()}
-          className="mb-6 text-gray-600 dark:text-gray-300"
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-8">
+      <div className="mb-8">
+        <Button 
+          variant="ghost" 
+          className="flex items-center text-gray-600 dark:text-gray-300 mb-4"
+          onClick={() => router.push("/admin/patients")}
         >
-          <ArrowLeft className="h-4 w-4 mr-2" />
+          <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Patients
         </Button>
-
-        <div className="grid gap-6">
-          {/* Patient Information Card */}
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800">
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-6">
-                <div>
-                  <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-                    {patient.name}
-                  </h1>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Patient ID: {patient.id}
-                  </p>
-                </div>
-                <Badge className={patient.converted ? "bg-green-500" : "bg-red-500"}>
-                  {patient.converted ? "Converted" : "Not Converted"}
+        
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">
+            Patient Details
+          </h1>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline"
+              className="flex items-center gap-2" 
+              onClick={handleEdit}
+            >
+              <Pencil className="h-4 w-4" />
+              Edit
+            </Button>
+            <Button 
+              variant="destructive"
+              className="flex items-center gap-2"
+              onClick={() => setDeleteDialogOpen(true)}
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete
+            </Button>
+          </div>
+        </div>
+      </div>
+      
+      <div className="grid md:grid-cols-3 gap-6">
+        <div className="col-span-2">
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 p-6">
+            <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
+              <div className="flex-1">
+                <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-1">
+                  {patient.name}
+                </h2>
+                <Badge className={getStatusColor(patient.status)}>
+                  {patient.status}
                 </Badge>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
-                    Contact Information
-                  </h2>
-                  <div className="space-y-3">
-                    <div className="flex items-center text-gray-600 dark:text-gray-300">
-                      <Mail className="h-4 w-4 mr-2" />
-                      <span>{patient.email}</span>
-                    </div>
-                    <div className="flex items-center text-gray-600 dark:text-gray-300">
-                      <Phone className="h-4 w-4 mr-2" />
-                      <span>{patient.phoneNumber}</span>
-                    </div>
-                    <div className="flex items-center text-gray-600 dark:text-gray-300">
-                      <MapPin className="h-4 w-4 mr-2" />
-                      <span>{patient.address}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
-                    Additional Information
-                  </h2>
-                  <div className="space-y-3">
-                    <div className="flex items-center text-gray-600 dark:text-gray-300">
-                      <Calendar className="h-4 w-4 mr-2" />
-                      <span>
-                        Created on{" "}
-                        {format(new Date(patient.createdAt), "MMMM d, yyyy")}
-                      </span>
-                    </div>
-                    <div className="text-gray-600 dark:text-gray-300">
-                      <span className="font-medium">Created By:</span>{" "}
-                      {patient.createdById.name}
-                    </div>
-                  </div>
-                </div>
+            </div>
+            
+            <div className="grid gap-4">
+              <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                <Phone className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                <span>{patient.phoneNumber}</span>
               </div>
+              
+              {patient.whatsappNumber && (
+                <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                  <Phone className="h-4 w-4 text-green-500" />
+                  <span>WhatsApp: {patient.whatsappNumber}</span>
+                </div>
+              )}
+              
+              <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                <Mail className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                <span>{patient.email}</span>
+              </div>
+              
+              {patient.address && (
+                <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                  <MapPin className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                  <span>{patient.address}</span>
+                </div>
+              )}
             </div>
           </div>
-
-          {/* Appointments List Card */}
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800">
-            <div className="p-6">
-              <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
-                Appointment History
-              </h2>
-              <div className="space-y-4">
-                {patient.appointments.map((appointment) => (
-                  <div
-                    key={appointment.id}
-                    onClick={() => handleAppointmentClick(appointment.id)}
-                    className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="text-base font-medium text-gray-900 dark:text-gray-100">
-                          {appointment.service}
-                        </h3>
-                        <div className="flex items-center gap-4 mt-2 text-sm text-gray-500 dark:text-gray-400">
-                          <div className="flex items-center">
-                            <Calendar className="h-4 w-4 mr-1" />
-                            {format(new Date(appointment.appointmentDate), "MMMM d, yyyy")}
-                          </div>
-                          <div className="flex items-center">
-                            <Clock className="h-4 w-4 mr-1" />
-                            {appointment.appointmentTime}
-                          </div>
-                        </div>
-                      </div>
-                      <Badge
-                        className={
-                          appointment.status === "Completed"
-                            ? "bg-green-500"
-                            : appointment.status === "Scheduled"
-                            ? "bg-blue-500"
-                            : "bg-yellow-500"
-                        }
-                      >
-                        {appointment.status}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
+        </div>
+        
+        <div>
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 p-6">
+            <h3 className="text-md font-semibold text-gray-700 dark:text-gray-300 mb-4">
+              Patient Information
+            </h3>
+            
+            <div className="space-y-4">
+              <div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  Created By
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  <User className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                  <span className="text-gray-700 dark:text-gray-300">
+                    {patient.createdBy?.name || 'Unknown'}
+                  </span>
+                </div>
+              </div>
+              
+              <div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  Created At
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  <Calendar className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                  <span className="text-gray-700 dark:text-gray-300">
+                    {formatDate(patient.createdAt)}
+                  </span>
+                </div>
+              </div>
+              
+              <div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  Last Updated
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  <Calendar className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                  <span className="text-gray-700 dark:text-gray-300">
+                    {formatDate(patient.updatedAt)}
+                  </span>
+                </div>
+              </div>
+              
+              <div>
+                <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+                  Status
+                </div>
+                <div className="flex items-center gap-2">
+                  {patient.status === "CONVERTED" ? (
+                    <Check className="h-5 w-5 text-green-500" />
+                  ) : patient.status === "ACTIVE" ? (
+                    <Check className="h-5 w-5 text-blue-500" />
+                  ) : patient.status === "INACTIVE" ? (
+                    <X className="h-5 w-5 text-yellow-500" />
+                  ) : (
+                    <X className="h-5 w-5 text-red-500" />
+                  )}
+                  <span className="text-gray-700 dark:text-gray-300">
+                    {patient.status}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+      
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete {patient.name}'s
+              record and remove their data from the system.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 } 

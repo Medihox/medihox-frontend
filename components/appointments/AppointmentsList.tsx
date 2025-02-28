@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/table";
 import React from "react";
 import { toast } from "react-hot-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Appointment {
   id: string;
@@ -111,7 +112,9 @@ const mockAppointments: Appointment[] = [
 interface AppointmentsListProps {
   searchQuery: string;
   timeRange: FilterTimeRange;
-  statusFilter: AppointmentStatus;
+  statusFilter: AppointmentStatus | "all";
+  showOnlyEnquiries?: boolean;
+  onEdit?: (appointment: Appointment) => void;
 }
 
 const getStatusColor = (status: string) => {
@@ -148,7 +151,13 @@ const getSourceIcon = (source: string) => {
   }
 };
 
-export function AppointmentsList({ searchQuery, timeRange, statusFilter }: AppointmentsListProps) {
+export function AppointmentsList({ 
+  searchQuery, 
+  timeRange, 
+  statusFilter,
+  showOnlyEnquiries = false,
+  onEdit
+}: AppointmentsListProps) {
   const router = useRouter();
   const [selectedAppointments, setSelectedAppointments] = useState<string[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>(mockAppointments);
@@ -192,7 +201,14 @@ export function AppointmentsList({ searchQuery, timeRange, statusFilter }: Appoi
 
   // Add debugging to see what's being sent
   console.log('Sending filters to API:', filters);
-  const { data, isLoading, error } = useGetAppointmentsQuery(filters);
+  const { data, isLoading, error } = useGetAppointmentsQuery({
+    page,
+    pageSize,
+    search: searchQuery,
+    timeRange,
+    status: statusFilter === 'all' ? undefined : statusFilter,
+    isEnquiry: showOnlyEnquiries,
+  } as any);
 
   // Extract appointments safely from the response
   const appointmentsData = React.useMemo(() => {
@@ -252,8 +268,12 @@ export function AppointmentsList({ searchQuery, timeRange, statusFilter }: Appoi
   };
 
   const handleEdit = (appointment: Appointment) => {
-    setAppointmentToEdit(appointment);
-    setIsEditDialogOpen(true);
+    if (onEdit) {
+      onEdit(appointment);
+    } else {
+      // Default edit behavior if no onEdit prop is provided
+      router.push(`/admin/appointments/edit/${appointment.id}`);
+    }
   };
 
   const handleDelete = (appointment: Appointment) => {
@@ -293,11 +313,67 @@ export function AppointmentsList({ searchQuery, timeRange, statusFilter }: Appoi
     }
   };
 
-  // Show loading state
+  // Show skeleton loading state instead of spinner
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Patient</TableHead>
+              <TableHead>Date & Time</TableHead>
+              <TableHead>Service</TableHead>
+              <TableHead>Source</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {[...Array(5)].map((_, index) => (
+              <TableRow key={index}>
+                <TableCell>
+                  <Skeleton className="h-5 w-32" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-24 mb-2" />
+                  <Skeleton className="h-3 w-16" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-5 w-24" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-5 w-20" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-6 w-24 rounded-full" />
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end">
+                    <Skeleton className="h-8 w-8 rounded-md mr-1" />
+                    <Skeleton className="h-8 w-8 rounded-md" />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        
+        <div className="p-4 border-t border-gray-200 dark:border-gray-800">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-5 w-48" />
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-9 w-28 rounded-lg" />
+              <Skeleton className="h-9 w-28 rounded-lg" />
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex justify-end mt-4">
+          <div className="flex space-x-2">
+            <Skeleton className="h-9 w-24 rounded-md" />
+            <Skeleton className="h-9 w-24 rounded-md" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -320,6 +396,16 @@ export function AppointmentsList({ searchQuery, timeRange, statusFilter }: Appoi
     );
   }
 
+  // If you're filtering client-side, you can add additional filtering:
+  const filteredAppointments = showOnlyEnquiries 
+    ? appointmentsData.filter((appointment: Appointment) => 
+        appointment.status.toLowerCase().includes('enquiry') || 
+        appointment.status.toLowerCase().includes('followup') ||
+        appointment.status.toLowerCase().includes('cost') ||
+        appointment.status.toLowerCase().includes('issue')
+      )
+    : appointmentsData;
+
   return (
     <>
       <div className="overflow-x-auto">
@@ -335,7 +421,7 @@ export function AppointmentsList({ searchQuery, timeRange, statusFilter }: Appoi
             </TableRow>
           </TableHeader>
           <TableBody>
-            {appointmentsData.map((appointment: Appointment) => (
+            {filteredAppointments.map((appointment: Appointment) => (
               <TableRow 
                 key={appointment.id} 
                 onClick={() => handleViewDetails(appointment.id)}

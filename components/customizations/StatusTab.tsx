@@ -1,163 +1,321 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { StatusDialog } from "./StatusDialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-
-interface Status {
-  id: string;
-  name: string;
-  color: string;
-  description: string;
-  type: 'appointment' | 'inquiry';
-}
-
-const mockStatuses: Status[] = [
-  {
-    id: "1",
-    name: "Scheduled",
-    color: "purple",
-    description: "Appointment is scheduled",
-    type: "appointment"
-  },
-  {
-    id: "2",
-    name: "Completed",
-    color: "green",
-    description: "Appointment is completed",
-    type: "appointment"
-  },
-  {
-    id: "3",
-    name: "New Lead",
-    color: "blue",
-    description: "New inquiry received",
-    type: "inquiry"
-  }
-];
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  useGetAllStatusQuery,
+  useCreateStatusMutation,
+  useUpdateStatusMutation,
+  useDeleteStatusMutation,
+  StatusEntity
+} from "@/lib/redux/services/customizationApi";
+import { showSuccessToast, showErrorToast } from "@/lib/utils/toast";
+import { getErrorMessage } from "@/lib/api/apiUtils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function StatusTab() {
-  const [statuses, setStatuses] = useState<Status[]>(mockStatuses);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [statusToEdit, setStatusToEdit] = useState<Status | null>(null);
-  const [statusToDelete, setStatusToDelete] = useState<Status | null>(null);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const { data: statuses, isLoading } = useGetAllStatusQuery();
+  const [createStatus, { isLoading: isCreating }] = useCreateStatusMutation();
+  const [updateStatus, { isLoading: isUpdating }] = useUpdateStatusMutation();
+  const [deleteStatus, { isLoading: isDeleting }] = useDeleteStatusMutation();
 
-  const handleSave = (status: Status) => {
-    if (statusToEdit) {
-      setStatuses(statuses.map(s => s.id === status.id ? status : s));
-    } else {
-      setStatuses([...statuses, { ...status, id: Date.now().toString() }]);
+  const [newStatusName, setNewStatusName] = useState("");
+  const [editStatusId, setEditStatusId] = useState<string | null>(null);
+  const [editStatusName, setEditStatusName] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [statusToDelete, setStatusToDelete] = useState<StatusEntity | null>(null);
+
+  const handleAddStatus = async () => {
+    if (!newStatusName.trim()) return;
+    
+    try {
+      await createStatus({ name: newStatusName }).unwrap();
+      showSuccessToast("Status added successfully");
+      setNewStatusName("");
+    } catch (error) {
+      showErrorToast(getErrorMessage(error) || "Failed to add status");
     }
-    setIsDialogOpen(false);
-    setStatusToEdit(null);
   };
 
-  const handleEdit = (status: Status) => {
-    setStatusToEdit(status);
-    setIsDialogOpen(true);
+  const handleEditStatus = (status: StatusEntity) => {
+    setEditStatusId(status.id);
+    setEditStatusName(status.name);
   };
 
-  const handleDelete = (status: Status) => {
+  const handleSaveEdit = async (id: string) => {
+    if (!editStatusName.trim()) return;
+    
+    try {
+      await updateStatus({ id, status: { name: editStatusName } }).unwrap();
+      showSuccessToast("Status updated successfully");
+      setEditStatusId(null);
+    } catch (error) {
+      showErrorToast(getErrorMessage(error) || "Failed to update status");
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditStatusId(null);
+  };
+
+  const handleDeleteClick = (status: StatusEntity) => {
     setStatusToDelete(status);
-    setIsDeleteDialogOpen(true);
+    setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
-    if (statusToDelete) {
-      setStatuses(statuses.filter(s => s.id !== statusToDelete.id));
-      setIsDeleteDialogOpen(false);
+  const confirmDelete = async () => {
+    if (!statusToDelete) return;
+    
+    try {
+      await deleteStatus(statusToDelete.id).unwrap();
+      showSuccessToast("Status deleted successfully");
+      setDeleteDialogOpen(false);
       setStatusToDelete(null);
+    } catch (error) {
+      showErrorToast(getErrorMessage(error) || "Failed to delete status");
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <Skeleton className="h-6 w-44 mb-2" />
+          <Skeleton className="h-4 w-full max-w-md mb-4" />
+        </div>
+
+        <div className="flex gap-2 mb-6">
+          <Skeleton className="h-10 w-60" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+
+        <div className="border rounded-lg overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-800">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Name
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Created At
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+              {[...Array(5)].map((_, index) => (
+                <tr key={index}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <Skeleton className="h-5 w-32" />
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <Skeleton className="h-5 w-24" />
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                    <div className="flex justify-end gap-2">
+                      <Skeleton className="h-8 w-8 rounded-md" />
+                      <Skeleton className="h-8 w-8 rounded-md" />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the status
+                &quot;{statusToDelete?.name}&quot; from your account.
+                This could affect entities that are currently using this status.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={confirmDelete}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  "Delete"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-medium">Status List</h3>
-        <Button
-          onClick={() => setIsDialogOpen(true)}
-          className="flex items-center gap-2 bg-purple-600 text-white hover:bg-purple-700"
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-2">
+          Status Options
+        </h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          Manage status options that can be used across the application
+        </p>
+      </div>
+
+      <div className="flex gap-2 mb-6">
+        <Input
+          placeholder="Add new status..."
+          value={newStatusName}
+          onChange={(e) => setNewStatusName(e.target.value)}
+          className="max-w-xs"
+        />
+        <Button 
+          onClick={handleAddStatus} 
+          disabled={isCreating || !newStatusName.trim()}
         >
-          <Plus className="h-4 w-4" /> Add Status
+          {isCreating ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Adding...
+            </>
+          ) : (
+            <>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Status
+            </>
+          )}
         </Button>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead>Color</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {statuses.map((status) => (
-            <TableRow key={status.id}>
-              <TableCell>
-                <Badge className={`bg-${status.color}-100 text-${status.color}-700 dark:text-black dark:bg-${status.color}-800`}>
-                  {status.name}
-                </Badge>
-              </TableCell>
-              <TableCell className="capitalize">{status.type}</TableCell>
-              <TableCell>{status.description}</TableCell>
-              <TableCell>
-                <div className={`w-6 h-6 rounded-full bg-${status.color}-500`} />
-              </TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleEdit(status)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDelete(status)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <div className="border rounded-lg overflow-hidden">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead className="bg-gray-50 dark:bg-gray-800">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Name
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Created At
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+            {statuses?.map((status) => (
+              <tr key={status.id}>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  {editStatusId === status.id ? (
+                    <div className="flex gap-2 items-center">
+                      <Input
+                        value={editStatusName}
+                        onChange={(e) => setEditStatusName(e.target.value)}
+                        className="max-w-xs"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleSaveEdit(status.id)}
+                        disabled={isUpdating || !editStatusName.trim()}
+                      >
+                        <Check className="h-4 w-4 text-green-600" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleCancelEdit}
+                      >
+                        <X className="h-4 w-4 text-red-600" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <span className="text-sm text-gray-900 dark:text-gray-100">
+                      {status.name}
+                    </span>
+                  )}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  {new Date(status.createdAt).toLocaleDateString()}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEditStatus(status)}
+                      disabled={editStatusId !== null}
+                    >
+                      <Pencil className="h-4 w-4 text-blue-600" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteClick(status)}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-600" />
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {statuses?.length === 0 && (
+              <tr>
+                <td
+                  colSpan={3}
+                  className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400"
+                >
+                  No status options found. Add your first one now.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
-      <StatusDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        status={statusToEdit}
-        onSave={handleSave}
-      />
-
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the status.
+              This action cannot be undone. This will permanently delete the status
+              &quot;{statusToDelete?.name}&quot; from your account.
+              This could affect entities that are currently using this status.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

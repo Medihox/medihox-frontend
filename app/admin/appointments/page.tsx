@@ -16,14 +16,7 @@ interface Appointment {
 }
 
 export type FilterTimeRange = 'all' | 'today' | 'week' | 'month';
-export type AppointmentStatus = 
-  | "all" 
-  | "scheduled" 
-  | "completed" 
-  | "cancelled" 
-  | "enquired" 
-  | "followup" 
-  | "cost-issues";
+export type AppointmentStatus = string;
 
 export default function AppointmentsListPage() {
   const [isAppointmentDialogOpen, setIsAppointmentDialogOpen] = useState(false);

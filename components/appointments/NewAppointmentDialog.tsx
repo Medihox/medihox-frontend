@@ -1,34 +1,146 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Loader2 } from "lucide-react";
+import { 
+  useGetAllServicesQuery,
+  useGetAllStatusQuery 
+} from "@/lib/redux/services/customizationApi";
+import { useCreateAppointmentMutation, useUpdateAppointmentMutation } from "@/lib/redux/services/appointmentApi";
+import { toast } from "react-hot-toast";
+import { getErrorMessage } from "@/lib/api/apiUtils";
 
 interface NewAppointmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  isEnquiry?: boolean;
+  initialData?: any;
+  appointmentId?: string;
 }
 
-export function NewAppointmentDialog({ open, onOpenChange }: NewAppointmentDialogProps) {
+export function NewAppointmentDialog({ 
+  open, 
+  onOpenChange,
+  isEnquiry = false,
+  initialData,
+  appointmentId
+}: NewAppointmentDialogProps) {
+  // Fetch services and status options from API
+  const { data: services, isLoading: isLoadingServices } = useGetAllServicesQuery();
+  const { data: statuses, isLoading: isLoadingStatuses } = useGetAllStatusQuery();
+  
+  // Add update mutation
+  const [createAppointment] = useCreateAppointmentMutation();
+  const [updateAppointment] = useUpdateAppointmentMutation();
+  
+  // Initialize form state from initial data if provided
   const [formData, setFormData] = useState({
     patientName: "",
     patientEmail: "",
     patientPhone: "",
     appointmentDate: "",
-    appointmentTime: "",
+    appointmentTime: "00:00",
     service: "",
+    status: "",
     source: "",
     notes: "",
   });
-
-  const handleSubmit = (e: React.FormEvent) => {
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Reset form when dialog opens/closes or initialData changes
+  useEffect(() => {
+    if (initialData) {
+      // Extract date and time from the ISO string
+      let dateStr = "";
+      let timeStr = "00:00";
+      
+      if (initialData.date) {
+        const dateObj = new Date(initialData.date);
+        dateStr = dateObj.toISOString().split('T')[0];
+        timeStr = dateObj.toTimeString().substring(0, 5);
+      }
+      
+      // Find service and status IDs that match the names
+      const serviceId = services?.find(s => s.name === initialData.service)?.id || "";
+      const statusId = statuses?.find(s => s.name === initialData.status)?.id || "";
+      
+      setFormData({
+        patientName: initialData.patient?.name || "",
+        patientEmail: initialData.patient?.email || "",
+        patientPhone: initialData.patient?.phoneNumber || "",
+        appointmentDate: dateStr,
+        appointmentTime: timeStr,
+        service: serviceId,
+        status: statusId,
+        source: initialData.source || "",
+        notes: initialData.notes || ""
+      });
+    } else if (open) {
+      // Reset form when opening without initial data
+      setFormData({
+        patientName: "",
+        patientEmail: "",
+        patientPhone: "",
+        appointmentDate: "",
+        appointmentTime: "00:00",
+        service: "",
+        status: "",
+        source: "",
+        notes: "",
+      });
+    }
+  }, [initialData, open, services, statuses]);
+  
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
-    console.log("Form submitted:", formData);
-    onOpenChange(false);
+    
+    setIsSubmitting(true);
+    try {
+      // Find selected service and status
+      const selectedService = services?.find(s => s.id === formData.service);
+      const selectedStatus = statuses?.find(s => s.id === formData.status);
+      
+      // Combine date and time
+      const dateTimeString = `${formData.appointmentDate}T${formData.appointmentTime}:00`;
+      
+      // Format data for API
+      const appointmentData = {
+        patient: {
+          name: formData.patientName,
+          email: formData.patientEmail,
+          phoneNumber: formData.patientPhone
+        },
+        date: dateTimeString,
+        service: selectedService?.name || formData.service,
+        status: selectedStatus?.name || formData.status,
+        source: formData.source,
+        notes: formData.notes
+      };
+      
+      // Create or update based on whether we have an ID
+      if (appointmentId) {
+        await updateAppointment({
+          id: appointmentId,
+          appointment: appointmentData
+        }).unwrap();
+        toast.success(isEnquiry ? "Enquiry updated successfully" : "Appointment updated successfully");
+      } else {
+        await createAppointment(appointmentData).unwrap();
+        toast.success(isEnquiry ? "Enquiry created successfully" : "Appointment created successfully");
+      }
+      
+      onOpenChange(false);
+    } catch (error) {
+      toast.error(getErrorMessage(error) || "Failed to save");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -43,7 +155,12 @@ export function NewAppointmentDialog({ open, onOpenChange }: NewAppointmentDialo
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>New Appointment</DialogTitle>
+          <DialogTitle>
+            {appointmentId 
+              ? (isEnquiry ? "Edit Enquiry" : "Edit Appointment") 
+              : (isEnquiry ? "New Enquiry" : "New Appointment")
+            }
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
@@ -79,19 +196,61 @@ export function NewAppointmentDialog({ open, onOpenChange }: NewAppointmentDialo
             </div>
             <div className="space-y-2">
               <Label htmlFor="service">Service</Label>
-              <select
-                id="service"
-                name="service"
-                value={formData.service}
-                onChange={handleChange}
-                className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm"
-                required
-              >
-                <option value="">Select Service</option>
-                <option value="general">General Checkup</option>
-                <option value="dental">Dental Care</option>
-                <option value="eye">Eye Care</option>
-              </select>
+              {isLoadingServices ? (
+                <div className="flex items-center space-x-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm text-gray-500">Loading services...</span>
+                </div>
+              ) : (
+                <select
+                  id="service"
+                  name="service"
+                  value={formData.service}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm"
+                  required
+                >
+                  <option value="">Select Service</option>
+                  {services?.map(service => (
+                    <option key={service.id} value={service.id}>
+                      {service.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              {isLoadingStatuses ? (
+                <div className="flex items-center space-x-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm text-gray-500">Loading statuses...</span>
+                </div>
+              ) : (
+                <select
+                  id="status"
+                  name="status"
+                  value={formData.status}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm"
+                  required
+                >
+                  <option value="">Select Status</option>
+                  {statuses
+                    ?.filter(status => !isEnquiry || 
+                      status.name.toLowerCase().includes('enquir') || 
+                      status.name.toLowerCase().includes('followup') ||
+                      status.name.toLowerCase().includes('cost') ||
+                      status.name.toLowerCase().includes('issue')
+                    )
+                    .map(status => (
+                      <option key={status.id} value={status.id}>
+                        {status.name}
+                      </option>
+                    ))
+                  }
+                </select>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="appointmentDate">Date</Label>
@@ -112,6 +271,8 @@ export function NewAppointmentDialog({ open, onOpenChange }: NewAppointmentDialo
                 type="time"
                 value={formData.appointmentTime}
                 onChange={handleChange}
+                className="w-full"
+                defaultValue="00:00"
                 required
               />
             </div>
@@ -126,10 +287,12 @@ export function NewAppointmentDialog({ open, onOpenChange }: NewAppointmentDialo
                 required
               >
                 <option value="">Select Source</option>
-                <option value="WhatsApp">WhatsApp</option>
-                <option value="Phone">Phone</option>
-                <option value="Facebook">Facebook</option>
-                <option value="Website">Website</option>
+                <option value="WEBSITE">Website</option>
+                <option value="DIRECT_CALL">Direct Call</option>
+                <option value="FACEBOOK">Facebook</option>
+                <option value="INSTAGRAM">Instagram</option>
+                <option value="REFERRAL">Referral</option>
+                <option value="WALK_IN">Walk-in</option>
               </select>
             </div>
           </div>
@@ -151,11 +314,27 @@ export function NewAppointmentDialog({ open, onOpenChange }: NewAppointmentDialo
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
             >
               Cancel
             </Button>
-            <Button type="submit">
-              Create Appointment
+            <Button 
+              type="submit"
+              disabled={isSubmitting || isLoadingServices || isLoadingStatuses}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {appointmentId 
+                    ? (isEnquiry ? "Updating Enquiry..." : "Updating...") 
+                    : (isEnquiry ? "Creating Enquiry..." : "Creating...")
+                  }
+                </>
+              ) : (
+                appointmentId 
+                  ? (isEnquiry ? "Update Enquiry" : "Update Appointment") 
+                  : (isEnquiry ? "Create Enquiry" : "Create Appointment")
+              )}
             </Button>
           </div>
         </form>

@@ -16,17 +16,27 @@ export async function GET(
       ...(request.headers.get('Authorization') 
         ? { 'Authorization': request.headers.get('Authorization')! } 
         : {}),
+      'Cookie': request.headers.get('cookie') || '',
     },
     cache: 'no-store',
+    credentials: 'include',
   });
   
   // Get the response data
   const data = await response.json();
   
   // Return the response
-  return NextResponse.json(data, {
+  const result = NextResponse.json(data, {
     status: response.status,
   });
+
+  response.headers.forEach((value, key) => {
+    if (key.toLowerCase() === 'set-cookie') {
+      result.headers.append('Set-Cookie', value);
+    }
+  });
+
+  return result;
 }
 
 export async function POST(
@@ -45,17 +55,27 @@ export async function POST(
       ...(request.headers.get('Authorization') 
         ? { 'Authorization': request.headers.get('Authorization')! } 
         : {}),
+      'Cookie': request.headers.get('cookie') || '',
     },
     body: JSON.stringify(body),
+    credentials: 'include',
   });
   
   // Get the response data
   const data = await response.json();
   
   // Return the response
-  return NextResponse.json(data, {
+  const result = NextResponse.json(data, {
     status: response.status,
   });
+
+  response.headers.forEach((value, key) => {
+    if (key.toLowerCase() === 'set-cookie') {
+      result.headers.append('Set-Cookie', value);
+    }
+  });
+
+  return result;
 }
 
 // Add similar functions for PUT, DELETE, etc.
@@ -73,15 +93,25 @@ export async function PUT(
       ...(request.headers.get('Authorization') 
         ? { 'Authorization': request.headers.get('Authorization')! } 
         : {}),
+      'Cookie': request.headers.get('cookie') || '',
     },
     body: JSON.stringify(body),
+    credentials: 'include',
   });
   
   const data = await response.json();
   
-  return NextResponse.json(data, {
+  const result = NextResponse.json(data, {
     status: response.status,
   });
+
+  response.headers.forEach((value, key) => {
+    if (key.toLowerCase() === 'set-cookie') {
+      result.headers.append('Set-Cookie', value);
+    }
+  });
+
+  return result;
 }
 
 export async function DELETE(
@@ -97,12 +127,22 @@ export async function DELETE(
       ...(request.headers.get('Authorization') 
         ? { 'Authorization': request.headers.get('Authorization')! } 
         : {}),
+      'Cookie': request.headers.get('cookie') || '',
     },
+    credentials: 'include',
   });
   
   const data = await response.json();
   
-  return NextResponse.json(data, {
+  const result = NextResponse.json(data, {
     status: response.status,
   });
+
+  response.headers.forEach((value, key) => {
+    if (key.toLowerCase() === 'set-cookie') {
+      result.headers.append('Set-Cookie', value);
+    }
+  });
+
+  return result;
 } 
