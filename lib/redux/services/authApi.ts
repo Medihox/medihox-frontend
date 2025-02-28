@@ -30,6 +30,8 @@ export interface RegisterRequest {
   password: string;
   name: string;
   role: 'SUPER_ADMIN' | 'ADMIN' | 'EMPLOYEE';
+  phone?: string;
+  organizationName?: string;
 }
 
 export interface LoginRequest {
