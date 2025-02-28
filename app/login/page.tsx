@@ -60,13 +60,17 @@ export default function LoginPage() {
       document.cookie = "isAuthenticated=true; path=/; max-age=31536000"; // 1 year
       document.cookie = `userRole=${response.user.role}; path=/; max-age=31536000`;
 
-      // Show success toast and delay redirect to ensure it's visible
+      // Show success toast
       showSuccessToast(`Welcome, ${response.user.name || 'User'}! Login successful.`);
-      
-      // Delay redirect to make sure user sees the success message
+
+      // Redirect based on user role
       setTimeout(() => {
-        router.push("/admin/dashboard");
-      }, 800); // Slight delay for better UX
+        if (response.user.role === "SUPER_ADMIN") {
+          router.push("/super-admin/dashboard");
+        } else {
+          router.push("/admin/dashboard");
+        }
+      }, 800);
     } catch (error: any) {
       // Extract the specific error message from the backend response
       let message = "Login failed. Please try again.";

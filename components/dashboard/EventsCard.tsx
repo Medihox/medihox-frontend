@@ -37,17 +37,20 @@ export function EventsCard({ upcomingAppointments }: EventsCardProps) {
               className="block"
             >
               <div className="bg-purple-300/60 dark:bg-purple-950/50 p-4 rounded-lg shadow-sm cursor-pointer transition hover:bg-opacity-80">
-                <div className="flex gap-4">
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-purple-600 dark:text-purple-400">
-                      {format(new Date(appointment.date), "MMMM d, yyyy 'at' h:mm a")}
-                    </div>
+                <div className="flex items-start gap-3">
+                  <div className="bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 p-2 rounded-md mt-1">
+                    <CalendarIcon className="h-5 w-5" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <div className="font-medium text-gray-800 dark:text-gray-200">
                       {appointment.patient?.name || "Unknown Patient"}
                     </div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">{appointment.service}</div>
+                    <div className="text-sm text-gray-700 dark:text-gray-300">
+                      {appointment.service}
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {format(new Date(appointment.date), "MMMM d, yyyy")} at {format(new Date(appointment.date), "h:mm a")}
+                    </div>
                   </div>
                 </div>
               </div>

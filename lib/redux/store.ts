@@ -9,6 +9,7 @@ import { patientApi } from './services/patientApi';
 import { userApi } from './services/userApi';
 import { customizationApi } from './services/customizationApi';
 import { dashboardApi } from './services/dashboardApi';
+import { superAdminApi } from './services/superAdminApi';
 
 // Create a custom storage object that checks for browser environment
 const createNoopStorage = () => {
@@ -44,6 +45,7 @@ const rootReducer = combineReducers({
   [userApi.reducerPath]: userApi.reducer,
   [customizationApi.reducerPath]: customizationApi.reducer,
   [dashboardApi.reducerPath]: dashboardApi.reducer,
+  [superAdminApi.reducerPath]: superAdminApi.reducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
@@ -61,7 +63,8 @@ export const store = configureStore({
       patientApi.middleware, 
       userApi.middleware,
       customizationApi.middleware,
-      dashboardApi.middleware
+      dashboardApi.middleware,
+      superAdminApi.middleware
     ),
 });
 
