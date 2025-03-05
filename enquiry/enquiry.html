@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Appointment Booking</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    :root {
+      --primary-color: #2c3e50;
+      --secondary-color: #3498db;
+      --accent-color: #e74c3c;
+      --background-color: #f9f9f9;
+      --text-color: #333;
+      --light-text: #f8f9fa;
+      --border-radius: 6px;
+      --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      --transition: all 0.3s ease;
+    }
+
+    body {
+      background-color: var(--background-color);
+      color: var(--text-color);
+      line-height: 1.4;
+      font-size: 14px;
+    }
+
+    .popup {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.75);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .appointment-container {
+      background: white;
+      width: 90%;
+      max-width: 760px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .close-button {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: var(--primary-color);
+      color: white;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: var(--transition);
+      z-index: 10;
+      font-size: 12px;
+    }
+
+    .close-button:hover {
+      background: var(--accent-color);
+      transform: rotate(90deg);
+    }
+
+    .appointment-header {
+      background: var(--primary-color);
+      color: var(--light-text);
+      padding: 15px;
+      text-align: center;
+    }
+
+    .appointment-header h2 {
+      font-size: 20px;
+      margin-bottom: 3px;
+    }
+    
+    .appointment-header p {
+      font-size: 14px;
+    }
+
+    .appointment-content {
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    .info-section {
+      flex: 1;
+      min-width: 250px;
+      padding: 15px;
+      background: linear-gradient(135deg, #2c3e50, #3498db);
+      color: white;
+    }
+
+    .info-item {
+      margin-bottom: 15px;
+    }
+
+    .info-item h3 {
+      font-size: 15px;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+    }
+
+    .info-item h3 i {
+      margin-right: 8px;
+      color: var(--accent-color);
+    }
+
+    .info-item p {
+      margin-left: 22px;
+      font-size: 14px;
+    }
+
+    .form-section {
+      flex: 1;
+      min-width: 250px;
+      padding: 15px;
+      background: white;
+    }
+
+    .form-section h3 {
+      color: var(--primary-color);
+      margin-bottom: 12px;
+      font-size: 16px;
+      text-align: center;
+    }
+
+    .input-group {
+      margin-bottom: 12px;
+    }
+
+    .input-group label {
+      display: block;
+      margin-bottom: 3px;
+      font-weight: 500;
+      color: var(--primary-color);
+      font-size: 13px;
+    }
+
+    .input-group input,
+    .input-group select {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #ddd;
+      border-radius: var(--border-radius);
+      font-size: 14px;
+      transition: var(--transition);
+    }
+
+    .input-group input:focus,
+    .input-group select:focus {
+      border-color: var(--secondary-color);
+      box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+      outline: none;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 10px;
+      background: var(--secondary-color);
+      color: white;
+      border: none;
+      border-radius: var(--border-radius);
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: var(--transition);
+      margin-top: 8px;
+    }
+
+    .submit-btn:hover {
+      background: var(--primary-color);
+      transform: translateY(-2px);
+    }
+
+    .status-message {
+      margin-top: 10px;
+      padding: 8px;
+      border-radius: var(--border-radius);
+      text-align: center;
+      display: none;
+      font-size: 13px;
+    }
+
+    .status-message.success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+      display: block;
+    }
+
+    .status-message.error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+      display: block;
+    }
+
+    @media (max-width: 650px) {
+      .appointment-content {
+        flex-direction: column;
+      }
+      
+      .info-section, .form-section {
+        min-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="popup" id="appointmentPopup">
+    <div class="appointment-container">
+      <div class="close-button" id="closeButton">
+        <i class="fas fa-times"></i>
+      </div>
+      
+      <div class="appointment-header">
+        <h2>Book Your Appointment</h2>
+        <p>We look forward to serving you</p>
+      </div>
+      
+      <div class="appointment-content">
+        <div class="info-section">
+          <div class="info-item">
+            <h3><i class="fas fa-clock"></i> Opening Hours</h3>
+            <p>Monday - Friday: 10:00 AM To 6:00 PM</p>
+          </div>
+          
+          <div class="info-item">
+            <h3><i class="fas fa-phone-alt"></i> Contact Us</h3>
+            <p>Office: (+91) 11-46564718</p>
+            <p>Mobile: (+91) 9999288562</p>
+          </div>
+          
+          <div class="info-item">
+            <h3><i class="fas fa-tags"></i> Consultation Fee</h3>
+            <p>INR 1500</p>
+          </div>
+        </div>
+        
+        <div class="form-section">
+          <h3>Schedule Your Visit</h3>
+          
+          <form id="appointmentForm">
+            <div class="input-group">
+              <label for="name">Full Name</label>
+              <input type="text" id="name" name="name" placeholder="Enter your full name" required>
+            </div>
+            
+            <div class="input-group">
+              <label for="email">Email Address</label>
+              <input type="email" id="email" name="email" placeholder="Enter your email address">
+            </div>
+            
+            <div class="input-group">
+              <label for="phone">Phone Number</label>
+              <input type="tel" id="phone" name="phone" placeholder="Enter your phone number" required>
+            </div>
+            
+            <div class="input-group">
+              <label for="treatment">Treatment</label>
+              <select id="treatment" name="treatment" required>
+                <option value="">Select a Treatment</option>
+                <!-- Service options will be loaded dynamically -->
+              </select>
+            </div>
+            
+            <button type="submit" class="submit-btn">Book Appointment</button>
+          </form>
+          
+          <div class="status-message" id="statusMessage"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // DOM elements
+      const appointmentForm = document.getElementById('appointmentForm');
+      const closeButton = document.getElementById('closeButton');
+      const statusMessage = document.getElementById('statusMessage');
+      const popup = document.getElementById('appointmentPopup');
+      const treatmentSelect = document.getElementById('treatment');
+      
+      // Clinic ID for API calls
+      const clinicId = "cm7ltswgl00009dm1z6jvg8x1";
+      
+      // Fetch services from API
+      fetchServices();
+      
+      // Close popup functionality
+      closeButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        popup.style.display = 'none';
+      });
+      
+      // Function to fetch services from API
+      function fetchServices() {
+        const servicesLoadingOption = document.createElement('option');
+        servicesLoadingOption.textContent = 'Loading services...';
+        servicesLoadingOption.disabled = true;
+        servicesLoadingOption.selected = true;
+        treatmentSelect.innerHTML = '';
+        treatmentSelect.appendChild(servicesLoadingOption);
+        
+        fetch('https://clinic-server-gules.vercel.app/api/custom-settings/cm7ltswgl00009dm1z6jvg8x1/services')
+          .then(response => {
+            if (response.ok) {
+              return response.json();
+            }
+            throw new Error('Failed to fetch services');
+          })
+          .then(data => {
+            // Clear loading option
+            treatmentSelect.innerHTML = '';
+            
+            // Add default option
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'Select a Treatment';
+            treatmentSelect.appendChild(defaultOption);
+            
+            // Add services from API
+            if (Array.isArray(data)) {
+              data.forEach(service => {
+                if (service && service.name) {
+                  const option = document.createElement('option');
+                  option.value = service.name;
+                  option.textContent = service.name;
+                  treatmentSelect.appendChild(option);
+                }
+              });
+            } else if (data && typeof data === 'object') {
+              // Handle if the API returns an object with services property
+              const services = data.services || data.data || [];
+              services.forEach(service => {
+                if (service && service.name) {
+                  const option = document.createElement('option');
+                  option.value = service.name;
+                  option.textContent = service.name;
+                  treatmentSelect.appendChild(option);
+                }
+              });
+            }
+            
+            // If no services were found
+            if (treatmentSelect.options.length <= 1) {
+              const noServicesOption = document.createElement('option');
+              noServicesOption.disabled = true;
+              noServicesOption.textContent = 'No services available';
+              treatmentSelect.appendChild(noServicesOption);
+            }
+          })
+          .catch(error => {
+            console.error('Error fetching services:', error);
+            
+            // Clear loading option
+            treatmentSelect.innerHTML = '';
+            
+            // Add default option
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'Select a Treatment';
+            treatmentSelect.appendChild(defaultOption);
+            
+            // Add error message option
+            const errorOption = document.createElement('option');
+            errorOption.disabled = true;
+            errorOption.textContent = 'Could not load services. Please try again later.';
+            treatmentSelect.appendChild(errorOption);
+            
+            // Fallback to default services in case API fails
+            const fallbackServices = [
+              "Hair Transplant",
+              "Liposuction",
+              "Rhinoplasty",
+              "Breast Augmentation",
+              "Gynecomastia (Male Breast) Surgery",
+              "Birthmark Treatment",
+              "Buttock Augmentation",
+              "Tummy Tuck Surgery",
+              "Non-surgical Treatments",
+              "Laser Hair Removal",
+              "Face Surgery",
+              "Sexual Enhancement Surgery",
+              "Lipoma Surgery",
+              "Pigmentation and Tattoo Removal Laser",
+              "Other Treatment or Surgery"
+            ];
+            
+            fallbackServices.forEach(serviceName => {
+              const option = document.createElement('option');
+              option.value = serviceName;
+              option.textContent = serviceName;
+              treatmentSelect.appendChild(option);
+            });
+          });
+      }
+      
+      // Form submission
+      appointmentForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Get form data
+        const name = document.getElementById('name').value;
+        const email = document.getElementById('email').value;
+        const phoneNumber = document.getElementById('phone').value;
+        const service = document.getElementById('treatment').value;
+        
+        // Create request payload
+        const payload = {
+          patient: {
+            phoneNumber: phoneNumber,
+            name: name,
+            email: email
+          },
+          source: "WEBSITE",
+          service: service,
+          status: "ENQUIRY"
+        };
+        
+        // Show loading state
+        statusMessage.textContent = 'Submitting your request...';
+        statusMessage.className = 'status-message';
+        statusMessage.style.display = 'block';
+        statusMessage.style.backgroundColor = '#e2f0fb';
+        statusMessage.style.color = '#0c5460';
+        statusMessage.style.borderColor = '#bee5eb';
+        
+        // API call
+        fetch(`https://clinic-server-gules.vercel.app/api/appointments/${clinicId}/book-appointment`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        })
+        .then(response => {
+          if (response.ok) {
+            return response.json();
+          }
+          throw new Error('Network response was not ok');
+        })
+        .then(data => {
+          // Handle success
+          statusMessage.textContent = data.message || 'Appointment request submitted successfully! We will contact you soon.';
+          statusMessage.className = 'status-message success';
+          appointmentForm.reset();
+          
+          // Fetch services again to reset the dropdown
+          fetchServices();
+          
+          // Auto-hide success message after 5 seconds
+          setTimeout(() => {
+            statusMessage.style.display = 'none';
+          }, 5000);
+        })
+        .catch(error => {
+          // Handle error
+          statusMessage.textContent = 'There was a problem submitting your request. Please try again or call us directly.';
+          statusMessage.className = 'status-message error';
+          console.error('Error:', error);
+        });
+      });
+    });
+  </script>
+</body>
+</html>
