@@ -18,11 +18,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Papa from 'papaparse';
 
-// Sample CSV template
-const CSV_TEMPLATE = `patientName,patientEmail,patientPhone,service,status,source,date,time,notes
-John Doe,john@example.com,1234567890,General Checkup,Scheduled,WEBSITE,2023-12-31,10:00,First visit
-Jane Smith,jane@example.com,9876543210,Dental Care,Scheduled,WHATSAPP,2023-12-30,15:30,Follow-up appointment
-`;
+// Sample CSV template - using string literal to avoid TS issues
+const CSV_TEMPLATE = "patientName,patientEmail,patientPhone,treatment,status,source,date,time,notes\n" + 
+"John Doe,john@example.com,1234567890,General Checkup,Scheduled,WEBSITE,2023-12-31,10:00,First visit\n" +
+"Jane Smith,jane@example.com,9876543210,Dental Care,Scheduled,WHATSAPP,2023-12-30,15:30,Follow-up appointment\n";
 
 export function CsvOperations() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -54,7 +53,7 @@ export function CsvOperations() {
         patientName: appointment.patient?.name || "",
         patientEmail: appointment.patient?.email || "",
         patientPhone: appointment.patient?.phoneNumber || "",
-        service: appointment.service || "",
+        treatment: appointment.service || "",
         status: appointment.status || "",
         source: appointment.source || "",
         date: appointment.date ? new Date(appointment.date).toISOString().split('T')[0] : "",
@@ -153,7 +152,7 @@ export function CsvOperations() {
                   email: row.patientEmail,
                   phoneNumber: row.patientPhone
                 },
-                service: row.service || "General Checkup",
+                service: row.treatment || row.service || "General Checkup",
                 status: row.status || "Scheduled",
                 source: row.source || "WEBSITE",
                 date: appointmentDate,
