@@ -19,7 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Papa from 'papaparse';
 
 // Sample CSV template
-const CSV_TEMPLATE = `patientName,patientEmail,patientPhone,treatment,status,source,date,time,notes
+const CSV_TEMPLATE = `patientName,patientEmail,patientPhone,service,status,source,date,time,notes
 John Doe,john@example.com,1234567890,General Checkup,Scheduled,WEBSITE,2023-12-31,10:00,First visit
 Jane Smith,jane@example.com,9876543210,Dental Care,Scheduled,WHATSAPP,2023-12-30,15:30,Follow-up appointment
 `;
@@ -54,7 +54,7 @@ export function CsvOperations() {
         patientName: appointment.patient?.name || "",
         patientEmail: appointment.patient?.email || "",
         patientPhone: appointment.patient?.phoneNumber || "",
-        treatment: appointment.service || "",
+        service: appointment.service || "",
         status: appointment.status || "",
         source: appointment.source || "",
         date: appointment.date ? new Date(appointment.date).toISOString().split('T')[0] : "",
@@ -136,13 +136,24 @@ export function CsvOperations() {
               }
               
               // Create appointment data
-              const appointmentData = {
+              const appointmentData: {
+                patient: {
+                  name: string;
+                  email: string;
+                  phoneNumber: string;
+                };
+                service: string;
+                status: string;
+                source: string;
+                date: string;
+                notes?: string;
+              } = {
                 patient: {
                   name: row.patientName,
                   email: row.patientEmail,
                   phoneNumber: row.patientPhone
                 },
-                treatment: row.treatment || "General Checkup",
+                service: row.service || "General Checkup",
                 status: row.status || "Scheduled",
                 source: row.source || "WEBSITE",
                 date: appointmentDate,
