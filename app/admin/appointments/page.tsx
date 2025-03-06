@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppointmentsList } from "@/components/appointments/AppointmentsList";
 import { AppointmentDialog } from "@/components/appointments/AppointmentDialog";
 import { Search, Filter, Plus } from "lucide-react";
 import { CsvOperations } from "@/components/appointments/CsvOperations";
+import { useGetAllStatusQuery } from "@/lib/redux/services/customizationApi";
 
 interface Appointment {
   id: string;
@@ -36,10 +37,36 @@ export default function AppointmentsListPage() {
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState("");
   const [timeRange, setTimeRange] = useState<FilterTimeRange>("all");
-  const [statusFilter, setStatusFilter] = useState<AppointmentStatus>("all");
+  const [statusFilter, setStatusFilter] = useState<AppointmentStatus>("APPOINTMENT");
   const [showFilters, setShowFilters] = useState(false);
   const [serviceFilter, setServiceFilter] = useState("");
   const [services, setServices] = useState<Service[]>([]);
+  const [availableStatuses, setAvailableStatuses] = useState<string[]>([]);
+  
+  // Fetch all statuses from the API
+  const { data: statuses } = useGetAllStatusQuery();
+  
+  // Filter for appointment-related statuses
+  useEffect(() => {
+    if (statuses) {
+      const appointmentStatuses = statuses.filter(status => 
+        status.name.toLowerCase().includes('appointment') || 
+        status.name.toLowerCase().includes('scheduled') ||
+        status.name.toLowerCase().includes('confirmed') ||
+        status.name === "APPOINTMENT"
+      );
+      
+      // Set available statuses for filtering
+      setAvailableStatuses(appointmentStatuses.map(s => s.name));
+      
+      // Make sure APPOINTMENT status is available or use the first status
+      if (appointmentStatuses.length > 0) {
+        if (!appointmentStatuses.some(s => s.name === "APPOINTMENT")) {
+          setStatusFilter(appointmentStatuses[0].name);
+        }
+      }
+    }
+  }, [statuses]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -128,16 +155,21 @@ export default function AppointmentsListPage() {
                 </select>
                 <select
                   value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as AppointmentStatus)}
+                  onChange={handleStatusChange}
                   className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300"
                 >
-                  <option value="all">All Status</option>
-                  <option value="scheduled">Scheduled</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
-                  <option value="enquired">Enquired</option>
-                  <option value="followup">Follow Up</option>
-                  <option value="cost-issues">Cost Issues</option>
+                  {availableStatuses.length > 0 ? (
+                    availableStatuses.map(status => (
+                      <option key={status} value={status}>{status}</option>
+                    ))
+                  ) : (
+                    <>
+                      <option value="APPOINTMENT">Appointment</option>
+                      <option value="scheduled">Scheduled</option>
+                      <option value="completed">Completed</option>
+                      <option value="cancelled">Cancelled</option>
+                    </>
+                  )}
                 </select>
               </div>
             </div>

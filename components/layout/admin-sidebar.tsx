@@ -18,6 +18,7 @@ import {
   Menu,
   X,
   Paintbrush,
+  CheckCircle
 } from "lucide-react";
 import { FaClinicMedical } from "react-icons/fa";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
@@ -28,8 +29,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard" },
-  { icon: FileSpreadsheet, label: "Inquiries", href: "/admin/inquiries" },
+  { icon: FileSpreadsheet, label: "Enquiries(Leads)", href: "/admin/inquiries" },
   { icon: Calendar, label: "Appointments", href: "/admin/appointments" },
+  { icon: CheckCircle, label: "Converted", href: "/admin/converted" },
   { icon: UserCog, label: "Patients", href: "/admin/patients" },
   { icon: Users, label: "Users", href: "/admin/users" },
   { icon: Bell, label: "Notifications", href: "/admin/notifications" },
@@ -113,7 +115,7 @@ export function Sidebar() {
             </button>
           </div>
           
-          <nav className="p-4 space-y-2 flex-1">
+          <nav className="overflow-y-auto scrollbar-hide flex-1 p-4 space-y-2 no-scrollbar">
             {menuItems.map((item) => {
               const Icon = item.icon;
               return (
@@ -173,7 +175,7 @@ export function Sidebar() {
               </button>
             </div>
             
-            <nav className="px-4 py-2 space-y-2 flex-1">
+            <nav className="overflow-y-auto scrollbar-hide flex-1 px-4 py-2 space-y-2 no-scrollbar">
               {menuItems.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -196,7 +198,10 @@ export function Sidebar() {
             </nav>
             
             <div className="p-4">
-              <button className="flex items-center gap-3 px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 transition-colors w-full">
+              <button 
+                onClick={handleLogout}
+                className="flex items-center gap-3 px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 transition-colors w-full"
+              >
                 <LogOut className="h-5 w-5" />
                 <span>Logout</span>
               </button>

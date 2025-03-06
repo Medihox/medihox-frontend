@@ -78,6 +78,34 @@ export interface PatientsResponse {
   };
 }
 
+// Interface for patient appointment response
+export interface PatientAppointment {
+  id: string;
+  patientId: string;
+  source: string;
+  notes?: string;
+  date: string;
+  time?: string;
+  beforeImages: string[];
+  afterImages: string[];
+  createdById: string;
+  updatedById: string;
+  status: string;
+  service: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PatientAppointmentsResponse {
+  data: PatientAppointment[];
+  pagination: {
+    currentPage: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+  };
+}
+
 export const patientApi = createApi({
   reducerPath: 'patientApi',
   baseQuery: baseQueryWithReauth,
@@ -112,6 +140,20 @@ export const patientApi = createApi({
     getPatientById: builder.query<Patient, string>({
       query: (id) => `patients/${id}`,
       providesTags: (_result, _error, id) => [{ type: 'Patient', id }],
+    }),
+    
+    getPatientAppointments: builder.query<PatientAppointmentsResponse, {patientId: string, page?: number, pageSize?: number}>({
+      query: ({patientId, page = 1, pageSize = 10}) => {
+        const queryParams = new URLSearchParams();
+        queryParams.append('page', page.toString());
+        queryParams.append('pageSize', pageSize.toString());
+        
+        return `patients/${patientId}/appointments?${queryParams.toString()}`;
+      },
+      providesTags: (_result, _error, {patientId}) => [
+        { type: 'Patient', id: patientId }, 
+        { type: 'Patient', id: `${patientId}-appointments` }
+      ],
     }),
     
     createPatient: builder.mutation<Patient, CreatePatientRequest>({
@@ -197,6 +239,7 @@ export const patientApi = createApi({
 export const {
   useGetPatientsQuery,
   useGetPatientByIdQuery,
+  useGetPatientAppointmentsQuery,
   useCreatePatientMutation,
   useUpdatePatientMutation,
   useDeletePatientMutation,
