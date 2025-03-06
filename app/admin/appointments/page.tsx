@@ -8,11 +8,24 @@ import { CsvOperations } from "@/components/appointments/CsvOperations";
 
 interface Appointment {
   id: string;
-  patientName: string;
+  patient?: {
+    name: string;
+    email: string;
+    phoneNumber: string;
+    city: string;
+  };
   date: string;
-  time: string;
+  time?: string;
   status: string;
   notes?: string;
+  service: string;
+  source: string;
+  createdAt: string;
+}
+
+interface Service {
+  id: string;
+  name: string;
 }
 
 export type FilterTimeRange = 'all' | 'today' | 'week' | 'month';
@@ -20,10 +33,13 @@ export type AppointmentStatus = string;
 
 export default function AppointmentsListPage() {
   const [isAppointmentDialogOpen, setIsAppointmentDialogOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState("");
   const [timeRange, setTimeRange] = useState<FilterTimeRange>("all");
   const [statusFilter, setStatusFilter] = useState<AppointmentStatus>("all");
   const [showFilters, setShowFilters] = useState(false);
+  const [serviceFilter, setServiceFilter] = useState("");
+  const [services, setServices] = useState<Service[]>([]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -37,9 +53,24 @@ export default function AppointmentsListPage() {
     setStatusFilter(e.target.value as AppointmentStatus);
   };
 
+  const handleServiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setServiceFilter(e.target.value);
+  };
+
   const handleCreateAppointment = (appointmentData: Partial<Appointment>) => {
-    console.log('Creating new appointment:', appointmentData);
+    if (selectedAppointment) {
+      console.log('Updating appointment:', appointmentData);
+      // Add your update logic here
+    } else {
+      console.log('Creating new appointment:', appointmentData);
+    }
     setIsAppointmentDialogOpen(false);
+    setSelectedAppointment(undefined);
+  };
+
+  const handleEditAppointment = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setIsAppointmentDialogOpen(true);
   };
 
   return (
@@ -116,13 +147,19 @@ export default function AppointmentsListPage() {
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Service
+                      Treatment
                     </label>
-                    <select className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm">
-                      <option value="">All Services</option>
-                      <option value="general">General Checkup</option>
-                      <option value="dental">Dental Care</option>
-                      <option value="eye">Eye Care</option>
+                    <select 
+                      className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm"
+                      value={serviceFilter}
+                      onChange={handleServiceChange}
+                    >
+                      <option value="">All Treatments</option>
+                      {services?.map((service) => (
+                        <option key={service.id} value={service.name}>
+                          {service.name}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   <div>
@@ -156,6 +193,7 @@ export default function AppointmentsListPage() {
             searchQuery={searchQuery}
             timeRange={timeRange}
             statusFilter={statusFilter}
+            onEdit={handleEditAppointment}
           />
         </div>
       </div>
@@ -164,6 +202,7 @@ export default function AppointmentsListPage() {
         open={isAppointmentDialogOpen}
         onOpenChange={setIsAppointmentDialogOpen}
         onSave={handleCreateAppointment}
+        appointment={selectedAppointment}
       />
     </div>
   );

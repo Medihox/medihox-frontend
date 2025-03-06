@@ -24,6 +24,7 @@ import {
 import { showSuccessToast, showErrorToast } from "@/lib/utils/toast";
 import { getErrorMessage } from "@/lib/api/apiUtils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Package } from "lucide-react";
 
 export function ServicesTab() {
   const { data: services, isLoading } = useGetAllServicesQuery();
@@ -42,10 +43,10 @@ export function ServicesTab() {
     
     try {
       await createService({ name: newServiceName }).unwrap();
-      showSuccessToast("Service added successfully");
+      showSuccessToast("Treatment added successfully");
       setNewServiceName("");
     } catch (error) {
-      showErrorToast(getErrorMessage(error) || "Failed to add service");
+      showErrorToast(getErrorMessage(error) || "Failed to add treatment");
     }
   };
 
@@ -59,10 +60,10 @@ export function ServicesTab() {
     
     try {
       await updateService({ id, service: { name: editServiceName } }).unwrap();
-      showSuccessToast("Service updated successfully");
+      showSuccessToast("Treatment updated successfully");
       setEditServiceId(null);
     } catch (error) {
-      showErrorToast(getErrorMessage(error) || "Failed to update service");
+      showErrorToast(getErrorMessage(error) || "Failed to update treatment");
     }
   };
 
@@ -80,11 +81,11 @@ export function ServicesTab() {
     
     try {
       await deleteService(serviceToDelete.id).unwrap();
-      showSuccessToast("Service deleted successfully");
+      showSuccessToast("Treatment deleted successfully");
       setDeleteDialogOpen(false);
       setServiceToDelete(null);
     } catch (error) {
-      showErrorToast(getErrorMessage(error) || "Failed to delete service");
+      showErrorToast(getErrorMessage(error) || "Failed to delete treatment");
     }
   };
 
@@ -144,16 +145,16 @@ export function ServicesTab() {
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-2">
-          Service Options
+          Treatment Options
         </h3>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Manage service options that can be used across the application
+          Manage treatment options that can be used across the application
         </p>
       </div>
 
       <div className="flex gap-2 mb-6">
         <Input
-          placeholder="Add new service..."
+          placeholder="Add new treatment..."
           value={newServiceName}
           onChange={(e) => setNewServiceName(e.target.value)}
           className="max-w-xs"
@@ -170,7 +171,7 @@ export function ServicesTab() {
           ) : (
             <>
               <Plus className="mr-2 h-4 w-4" />
-              Add Service
+              Add Treatment
             </>
           )}
         </Button>
@@ -254,7 +255,14 @@ export function ServicesTab() {
                   colSpan={3}
                   className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400"
                 >
-                  No service options found. Add your first one now.
+                  <div className="text-center py-8">
+                    <div className="text-gray-400 dark:text-gray-500 mb-3">
+                      <Package className="h-12 w-12 mx-auto opacity-50" />
+                    </div>
+                    <p className="text-gray-500 dark:text-gray-400">
+                      No treatment options found. Add your first one now.
+                    </p>
+                  </div>
                 </td>
               </tr>
             )}
@@ -267,9 +275,9 @@ export function ServicesTab() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the service
-              &quot;{serviceToDelete?.name}&quot; from your account.
-              This could affect entities that are currently using this service.
+              This action cannot be undone. This will permanently delete the treatment
+              "{serviceToDelete?.name}" from your account.
+              This could affect entities that are currently using this treatment.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -8,8 +8,12 @@ export async function GET(
 ) {
   const path = params.path.join('/');
   
-  // Forward the request to the API
-  const response = await fetch(`${API_BASE_URL}/${path}`, {
+  // Get query string from the request URL
+  const url = new URL(request.url);
+  const queryString = url.search; // This includes the '?' character
+  
+  // Forward the request to the API with query parameters
+  const response = await fetch(`${API_BASE_URL}/${path}${queryString}`, {
     headers: {
       'Content-Type': 'application/json',
       // Forward authorization header if it exists
@@ -46,8 +50,12 @@ export async function POST(
   const path = params.path.join('/');
   const body = await request.json();
   
-  // Forward the request to the API
-  const response = await fetch(`${API_BASE_URL}/${path}`, {
+  // Get query string from the request URL
+  const url = new URL(request.url);
+  const queryString = url.search;
+  
+  // Forward the request to the API with query parameters
+  const response = await fetch(`${API_BASE_URL}/${path}${queryString}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -86,7 +94,11 @@ export async function PUT(
   const path = params.path.join('/');
   const body = await request.json();
   
-  const response = await fetch(`${API_BASE_URL}/${path}`, {
+  // Get query string from the request URL
+  const url = new URL(request.url);
+  const queryString = url.search;
+  
+  const response = await fetch(`${API_BASE_URL}/${path}${queryString}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -120,7 +132,11 @@ export async function DELETE(
 ) {
   const path = params.path.join('/');
   
-  const response = await fetch(`${API_BASE_URL}/${path}`, {
+  // Get query string from the request URL
+  const url = new URL(request.url);
+  const queryString = url.search;
+  
+  const response = await fetch(`${API_BASE_URL}/${path}${queryString}`, {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',

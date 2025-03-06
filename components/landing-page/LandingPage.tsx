@@ -471,7 +471,7 @@ export default function LandingPage() {
                 description="Perfect for small practices just getting started"
                 features={[
                   "Up to 2 practitioners",
-                  "200 patient records",
+                  "10000 patient records",
                   "Basic appointment scheduling",
                   "Patient reminders",
                   "Standard support"
@@ -489,7 +489,7 @@ export default function LandingPage() {
                   "Up to 10 practitioners",
                   "Unlimited patient records",
                   "Advanced scheduling",
-                  "Billing & insurance",
+                  "Bulk data handling",
                   "EHR integration",
                   "Analytics dashboard",
                   "Priority support"

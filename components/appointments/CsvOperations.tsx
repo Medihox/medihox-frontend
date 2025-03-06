@@ -19,7 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Papa from 'papaparse';
 
 // Sample CSV template
-const CSV_TEMPLATE = `patientName,patientEmail,patientPhone,service,status,source,date,time,notes
+const CSV_TEMPLATE = `patientName,patientEmail,patientPhone,treatment,status,source,date,time,notes
 John Doe,john@example.com,1234567890,General Checkup,Scheduled,WEBSITE,2023-12-31,10:00,First visit
 Jane Smith,jane@example.com,9876543210,Dental Care,Scheduled,WHATSAPP,2023-12-30,15:30,Follow-up appointment
 `;
@@ -54,7 +54,7 @@ export function CsvOperations() {
         patientName: appointment.patient?.name || "",
         patientEmail: appointment.patient?.email || "",
         patientPhone: appointment.patient?.phoneNumber || "",
-        service: appointment.service || "",
+        treatment: appointment.service || "",
         status: appointment.status || "",
         source: appointment.source || "",
         date: appointment.date ? new Date(appointment.date).toISOString().split('T')[0] : "",
@@ -109,7 +109,8 @@ export function CsvOperations() {
             try {
               // Validate required fields
               if (!row.patientName || !row.patientEmail || !row.patientPhone || !row.date) {
-                throw new Error(`Missing required fields in row: ${JSON.stringify(row)}`);
+                failedCount++;
+                continue;
               }
               
               // Initialize with default value and improve error handling
@@ -129,7 +130,8 @@ export function CsvOperations() {
                     appointmentDate = dateObj.toISOString();
                   }
                 } catch (e) {
-                  throw new Error(`Invalid date/time format in row: ${JSON.stringify(row)}`);
+                  failedCount++;
+                  continue;
                 }
               }
               
@@ -140,10 +142,10 @@ export function CsvOperations() {
                   email: row.patientEmail,
                   phoneNumber: row.patientPhone
                 },
-                service: row.service || "General Checkup",
+                treatment: row.treatment || "General Checkup",
                 status: row.status || "Scheduled",
                 source: row.source || "WEBSITE",
-                date: appointmentDate, // Use the combined ISO date
+                date: appointmentDate,
                 notes: row.notes || ""
               };
               
@@ -152,9 +154,6 @@ export function CsvOperations() {
               successCount++;
             } catch (error) {
               failedCount++;
-              const errorMessage = getErrorMessage(error) || "Unknown error";
-              errorMessages.push(`Row ${data.indexOf(row) + 2}: ${errorMessage}`);
-              console.error("Error creating appointment:", error);
             }
           }
           
@@ -162,7 +161,7 @@ export function CsvOperations() {
           setUploadResults({
             success: successCount,
             failed: failedCount,
-            errors: errorMessages
+            errors: failedCount > 0 ? ["Some records could not be imported. Please check your CSV format and try again."] : []
           });
           setShowUploadResults(true);
           
@@ -171,7 +170,7 @@ export function CsvOperations() {
           }
           
           if (failedCount > 0) {
-            toast.error(`Failed to create ${failedCount} appointments`);
+            toast.error("Some records could not be imported. Please check your CSV format and try again.");
           }
           
           // Reset file input
@@ -183,13 +182,13 @@ export function CsvOperations() {
         },
         error: (error) => {
           console.error("Error parsing CSV:", error);
-          toast.error("Failed to parse CSV file");
+          toast.error("Failed to parse CSV file. Please check the file format.");
           setIsUploading(false);
         }
       });
     } catch (error) {
       console.error("Error uploading CSV:", error);
-      toast.error(getErrorMessage(error) || "Failed to upload appointments");
+      toast.error("Failed to upload file. Please try again.");
       setIsUploading(false);
     }
   };

@@ -3,20 +3,40 @@
 import { useState, useEffect } from "react";
 import { AppointmentsList } from "@/components/appointments/AppointmentsList";
 import { NewAppointmentDialog } from "@/components/appointments/NewAppointmentDialog";
+import { AppointmentDialog } from "@/components/appointments/AppointmentDialog";
 import { Search, Filter, Plus } from "lucide-react";
 import { useGetAllStatusQuery } from "@/lib/redux/services/customizationApi";
+import { CsvOperations } from "@/components/appointments/CsvOperations";
 
 export type FilterTimeRange = 'all' | 'today' | 'week' | 'month';
 export type AppointmentStatus = string;
 
+interface Appointment {
+  id: string;
+  patient?: {
+    name: string;
+    email: string;
+    phoneNumber: string;
+    city: string;
+  };
+  date: string;
+  time?: string;
+  status: string;
+  notes?: string;
+  service: string;
+  source: string;
+  createdAt: string;
+}
+
 export default function InquiriesPage() {
   const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [timeRange, setTimeRange] = useState<FilterTimeRange>("all");
-  const [statusFilter, setStatusFilter] = useState<AppointmentStatus>("enquired");
+  const [statusFilter, setStatusFilter] = useState<AppointmentStatus>("ENQUIRY");
   const [showFilters, setShowFilters] = useState(false);
   const [availableStatuses, setAvailableStatuses] = useState<string[]>([]);
-  const [appointmentToEdit, setAppointmentToEdit] = useState<any>(null);
+  const [appointmentToEdit, setAppointmentToEdit] = useState<Appointment | undefined>(undefined);
   
   // Fetch all statuses from the API
   const { data: statuses } = useGetAllStatusQuery();
@@ -34,8 +54,8 @@ export default function InquiriesPage() {
       // Set available statuses for filtering
       setAvailableStatuses(enquiryStatuses.map(s => s.name));
       
-      // Set default status filter if available
-      if (enquiryStatuses.length > 0 && statusFilter === 'enquired') {
+      // Make sure ENQUIRY status is available or use the first status
+      if (enquiryStatuses.length > 0 && !enquiryStatuses.some(s => s.name === "ENQUIRY")) {
         setStatusFilter(enquiryStatuses[0].name);
       }
     }
@@ -53,9 +73,20 @@ export default function InquiriesPage() {
     setStatusFilter(e.target.value);
   };
 
-  const handleEditInquiry = (inquiry: any) => {
+  const handleEditInquiry = (inquiry: Appointment) => {
     setAppointmentToEdit(inquiry);
+    setIsEditDialogOpen(true);
+  };
+  
+  const handleCreateInquiry = () => {
+    setAppointmentToEdit(undefined);
     setIsNewAppointmentOpen(true);
+  };
+  
+  const handleSaveInquiry = (inquiryData: Partial<Appointment>) => {
+    console.log('Saving inquiry:', inquiryData);
+    setIsEditDialogOpen(false);
+    setAppointmentToEdit(undefined);
   };
 
   return (
@@ -66,13 +97,16 @@ export default function InquiriesPage() {
             <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">All Enquiries</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">Manage and track all enquiries</p>
           </div>
-          <button 
-            onClick={() => setIsNewAppointmentOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            New Enquiry
-          </button>
+          <div className="flex gap-2">
+            <CsvOperations />
+            <button 
+              onClick={handleCreateInquiry}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              New Enquiry
+            </button>
+          </div>
         </div>
 
         <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800">
@@ -128,10 +162,10 @@ export default function InquiriesPage() {
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Service
+                      Treatment
                     </label>
                     <select className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm">
-                      <option value="">All Services</option>
+                      <option value="">All Treatments</option>
                       <option value="general">General Checkup</option>
                       <option value="dental">Dental Care</option>
                       <option value="eye">Eye Care</option>
@@ -167,22 +201,29 @@ export default function InquiriesPage() {
           <AppointmentsList 
             searchQuery={searchQuery}
             timeRange={timeRange}
-            statusFilter={statusFilter as any}
+            statusFilter={statusFilter === "all" ? "all" : "ENQUIRY"}
             showOnlyEnquiries={true}
             onEdit={handleEditInquiry}
           />
         </div>
       </div>
 
+      {/* New appointment dialog for creating new inquiries */}
       <NewAppointmentDialog 
         open={isNewAppointmentOpen}
         onOpenChange={(open) => {
           setIsNewAppointmentOpen(open);
-          if (!open) setAppointmentToEdit(null);
         }}
         isEnquiry={true}
-        initialData={appointmentToEdit}
-        appointmentId={appointmentToEdit?.id}
+        initialData={undefined}
+      />
+
+      {/* Appointment dialog for editing existing inquiries */}
+      <AppointmentDialog 
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        appointment={appointmentToEdit}
+        onSave={handleSaveInquiry}
       />
     </div>
   );

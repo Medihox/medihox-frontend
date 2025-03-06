@@ -82,6 +82,22 @@ export function NewAppointmentDialog({
         notes: initialData.notes || ""
       });
     } else if (open) {
+      // For new inquiries, try to set ENQUIRY as the default status
+      let defaultStatusId = "";
+      if (isEnquiry && statuses) {
+        // Look for a status with the name "ENQUIRY"
+        const enquiryStatus = statuses.find(s => s.name === "ENQUIRY");
+        if (enquiryStatus) {
+          defaultStatusId = enquiryStatus.id;
+        } else {
+          // Look for a status containing "enquir" if exact match not found
+          const fallbackStatus = statuses.find(s => s.name.toLowerCase().includes('enquir'));
+          if (fallbackStatus) {
+            defaultStatusId = fallbackStatus.id;
+          }
+        }
+      }
+
       // Reset form when opening without initial data
       setFormData({
         patientName: "",
@@ -90,12 +106,12 @@ export function NewAppointmentDialog({
         appointmentDate: "",
         appointmentTime: "00:00",
         service: "",
-        status: "",
+        status: defaultStatusId,
         source: "",
         notes: "",
       });
     }
-  }, [initialData, open, services, statuses]);
+  }, [initialData, open, services, statuses, isEnquiry]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -195,11 +211,11 @@ export function NewAppointmentDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="service">Service</Label>
+              <Label htmlFor="service">Treatment</Label>
               {isLoadingServices ? (
                 <div className="flex items-center space-x-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="text-sm text-gray-500">Loading services...</span>
+                  <span className="text-sm text-gray-500">Loading treatments...</span>
                 </div>
               ) : (
                 <select
@@ -210,7 +226,7 @@ export function NewAppointmentDialog({
                   className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm"
                   required
                 >
-                  <option value="">Select Service</option>
+                  <option value="">Select Treatment</option>
                   {services?.map(service => (
                     <option key={service.id} value={service.id}>
                       {service.name}
@@ -297,17 +313,19 @@ export function NewAppointmentDialog({
             </div>
           </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea
-              id="notes"
-              name="notes"
-              value={formData.notes}
-              onChange={handleChange}
-              placeholder="Add any additional notes..."
-              className="h-20"
-            />
-          </div>
+          {!isEnquiry && (
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                name="notes"
+                value={formData.notes}
+                onChange={handleChange}
+                placeholder="Add any additional notes..."
+                className="h-20"
+              />
+            </div>
+          )}
 
           <div className="flex justify-end gap-3">
             <Button

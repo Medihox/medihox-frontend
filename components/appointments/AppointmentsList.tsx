@@ -114,7 +114,7 @@ interface AppointmentsListProps {
   timeRange: FilterTimeRange;
   statusFilter: AppointmentStatus | "all";
   showOnlyEnquiries?: boolean;
-  onEdit?: (appointment: Appointment) => void;
+  onEdit: (appointment: Appointment) => void;
 }
 
 const getStatusColor = (status: string) => {
@@ -268,12 +268,7 @@ export function AppointmentsList({
   };
 
   const handleEdit = (appointment: Appointment) => {
-    if (onEdit) {
-      onEdit(appointment);
-    } else {
-      // Default edit behavior if no onEdit prop is provided
-      router.push(`/admin/appointments/edit/${appointment.id}`);
-    }
+    onEdit(appointment);
   };
 
   const handleDelete = (appointment: Appointment) => {
@@ -322,7 +317,7 @@ export function AppointmentsList({
             <TableRow>
               <TableHead>Patient</TableHead>
               <TableHead>Date & Time</TableHead>
-              <TableHead>Service</TableHead>
+              <TableHead>Treatment</TableHead>
               <TableHead>Source</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -414,7 +409,7 @@ export function AppointmentsList({
             <TableRow>
               <TableHead>Patient</TableHead>
               <TableHead>Date & Time</TableHead>
-              <TableHead>Service</TableHead>
+              <TableHead>Treatment</TableHead>
               <TableHead>Source</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -429,6 +424,16 @@ export function AppointmentsList({
               >
                 <TableCell className="font-medium">
                   {appointment.patient?.name || 'Unknown Patient'}
+                  {appointment.patient?.email && (
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {appointment.patient.email}
+                    </div>
+                  )}
+                  {appointment.patient?.phoneNumber && (
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      {appointment.patient.phoneNumber}
+                    </div>
+                  )}
                 </TableCell>
                 <TableCell>
                   {appointment.date ? (

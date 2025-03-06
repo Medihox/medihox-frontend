@@ -9,9 +9,15 @@ export const corsProxy = async (
   headers?: Record<string, string>
 ) => {
   try {
+    // Extract query parameters if they exist in the path
+    let url = `${API_BASE_URL}/${path}`;
+    
+    // Don't manipulate the URL if it's already properly formatted
+    // This ensures we don't mess with query parameters that may be in the middle of a path
+    
     const config: AxiosRequestConfig = {
       method,
-      url: `${API_BASE_URL}/${path}`,
+      url,
       ...(data && { data }),
       headers: {
         'Content-Type': 'application/json',

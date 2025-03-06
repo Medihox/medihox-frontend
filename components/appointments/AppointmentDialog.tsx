@@ -54,7 +54,7 @@ const appointmentFormSchema = z.object({
   date: z.string().min(1, "Date is required"),
   time: z.string().optional(),
   status: z.string().min(1, "Status is required"),
-  service: z.string().min(1, "Service is required"),
+  service: z.string().min(1, "Treatment is required"),
   source: z.string().min(1, "Source is required"),
   notes: z.string().optional(),
 });
@@ -135,7 +135,7 @@ export function AppointmentDialog({
           date: z.string().min(1, "Date is required"),
           time: z.string().optional(),
           status: z.string().min(1, "Status is required"),
-          service: z.string().min(1, "Service is required"),
+          service: z.string().min(1, "Treatment is required"),
           source: z.string().min(1, "Source is required"),
           notes: z.string().optional(),
         })
@@ -246,22 +246,22 @@ export function AppointmentDialog({
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="service">Service</Label>
+                  <Label htmlFor="service">Treatment</Label>
                   <Controller
                     name="service"
                     control={control}
                     render={({ field }) => (
-                      <Select 
-                        onValueChange={field.onChange} 
-                        value={field.value}
+                      <Select
                         disabled={isLoadingServices}
+                        value={field.value}
+                        onValueChange={field.onChange}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select service" />
+                          <SelectValue placeholder="Select treatment" />
                         </SelectTrigger>
                         <SelectContent>
                           {isLoadingServices ? (
-                            <SelectItem value="loading">Loading services...</SelectItem>
+                            <SelectItem value="loading">Loading treatments...</SelectItem>
                           ) : (
                             <>
                               {services?.map(service => (
@@ -270,7 +270,7 @@ export function AppointmentDialog({
                                 </SelectItem>
                               ))}
                               {(!services || services.length === 0) && (
-                                <SelectItem value="no-services">No services available</SelectItem>
+                                <SelectItem value="no-services">No treatments available</SelectItem>
                               )}
                             </>
                           )}
