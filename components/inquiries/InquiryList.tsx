@@ -52,6 +52,8 @@ interface InquiryListProps {
   searchQuery: string;
   timeRange: FilterTimeRange;
   statusFilter: InquiryStatus | "all";
+  fromDate?: string;
+  toDate?: string;
   onEdit: (inquiry: Inquiry) => void;
 }
 
@@ -121,6 +123,8 @@ export function InquiryList({
   searchQuery, 
   timeRange, 
   statusFilter,
+  fromDate,
+  toDate,
   onEdit
 }: InquiryListProps) {
   const router = useRouter();
@@ -153,8 +157,20 @@ export function InquiryList({
       result.status = statusFilter;
     }
     
+    if (fromDate && fromDate.trim() !== '') {
+      result.fromDate = fromDate;
+    }
+    
+    if (toDate && toDate.trim() !== '') {
+      result.toDate = toDate;
+    }
+    
+    // Make sure page and pageSize are included
+    result.page = typeof page === 'number' ? page : 1;
+    result.pageSize = typeof pageSize === 'number' ? pageSize : 10;
+    
     return result;
-  }, [searchQuery, timeRange, statusFilter, page, pageSize]);
+  }, [searchQuery, timeRange, statusFilter, fromDate, toDate, page, pageSize]);
 
   // Fetch inquiries from API using the dedicated inquiries endpoint
   const { data, isLoading, error } = useGetInquiriesQuery(filters);
@@ -212,13 +228,13 @@ export function InquiryList({
   // Handle page navigation
   const goToNextPage = () => {
     if (pagination.hasNextPage) {
-      setPage(p => p + 1);
+      setPage(prev => prev + 1);
     }
   };
 
   const goToPreviousPage = () => {
     if (pagination.hasPreviousPage) {
-      setPage(p => p - 1);
+      setPage(prev => Math.max(1, prev - 1));
     }
   };
 
@@ -462,29 +478,27 @@ export function InquiryList({
       </Table>
       
       {/* Pagination controls */}
-      {!isLoading && pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between px-2 py-4">
-          <div className="text-sm text-gray-500 dark:text-gray-400">
-            Showing {(pagination.currentPage - 1) * pagination.pageSize + 1} to {Math.min(pagination.currentPage * pagination.pageSize, pagination.totalItems)} of {pagination.totalItems} results
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
+      {!isLoading && inquiriesData.length > 0 && (
+        <div className="flex justify-end mt-4">
+          <div className="flex space-x-2">
+            <Button 
+              variant="outline" 
               size="sm"
-              onClick={goToPreviousPage}
               disabled={!pagination.hasPreviousPage}
+              onClick={goToPreviousPage}
             >
-              <ChevronLeft className="h-4 w-4 mr-1" />
+              <ChevronLeft className="h-4 w-4" />
               Previous
             </Button>
+            
             <Button
               variant="outline"
               size="sm"
-              onClick={goToNextPage}
               disabled={!pagination.hasNextPage}
+              onClick={goToNextPage}
             >
               Next
-              <ChevronRight className="h-4 w-4 ml-1" />
+              <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
         </div>

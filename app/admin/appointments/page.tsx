@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { AppointmentsList } from "@/components/appointments/AppointmentsList";
 import { AppointmentDialog } from "@/components/appointments/AppointmentDialog";
-import { Search, Filter, Calendar, Check, X } from "lucide-react";
+import { Search, Calendar, Check, X } from "lucide-react";
 import { useGetAllStatusQuery } from "@/lib/redux/services/customizationApi";
 import { format } from "date-fns";
 import {
@@ -49,7 +49,6 @@ export default function AppointmentsListPage() {
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
   const [tempStartDate, setTempStartDate] = useState<Date | undefined>(undefined);
   const [tempEndDate, setTempEndDate] = useState<Date | undefined>(undefined);
   const [serviceFilter, setServiceFilter] = useState("");
@@ -159,24 +158,15 @@ export default function AppointmentsListPage() {
         <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800">
           <div className="p-4 border-b border-gray-200 dark:border-gray-800">
             <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2 flex-1">
-                <div className="relative flex-1 max-w-md">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={handleSearch}
-                    placeholder="Search appointments..."
-                    className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400"
-                  />
-                </div>
-                <button 
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <Filter className="h-4 w-4" />
-                  Filters
-                </button>
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={handleSearch}
+                  placeholder="Search appointments..."
+                  className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400"
+                />
               </div>
               <div className="flex items-center gap-3">
                 <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
@@ -248,7 +238,7 @@ export default function AppointmentsListPage() {
                         }
                       }}
                       initialFocus
-                      className="scale-95 origin-top" // Increase scale to 95%
+                      className="scale-95 origin-top"
                     />
                   </PopoverContent>
                 </Popover>
@@ -265,52 +255,6 @@ export default function AppointmentsListPage() {
                 </select>
               </div>
             </div>
-
-            {showFilters && (
-              <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Treatment
-                    </label>
-                    <select 
-                      className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm"
-                      value={serviceFilter}
-                      onChange={(e) => setServiceFilter(e.target.value)}
-                    >
-                      <option value="">All Treatments</option>
-                      {services?.map((service) => (
-                        <option key={service.id} value={service.name}>
-                          {service.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Source
-                    </label>
-                    <select className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm">
-                      <option value="">All Sources</option>
-                      <option value="whatsapp">WhatsApp</option>
-                      <option value="phone">Phone</option>
-                      <option value="facebook">Facebook</option>
-                      <option value="website">Website</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Created By
-                    </label>
-                    <select className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm">
-                      <option value="">All Staff</option>
-                      <option value="dr-smith">Dr. Smith</option>
-                      <option value="dr-johnson">Dr. Johnson</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
           
           <AppointmentsList 

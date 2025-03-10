@@ -3,8 +3,17 @@
 import { useState, useEffect } from "react";
 import { AppointmentsList } from "@/components/appointments/AppointmentsList";
 import { AppointmentDialog } from "@/components/appointments/AppointmentDialog";
-import { Search, Filter, Plus, CheckCircle } from "lucide-react";
+import { Search, Plus, CheckCircle, Calendar, Check, X } from "lucide-react";
 import { useGetAllStatusQuery } from "@/lib/redux/services/customizationApi";
+import { format } from "date-fns";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
 interface Appointment {
   id: string;
@@ -32,9 +41,15 @@ export default function ConvertedAppointmentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [timeRange, setTimeRange] = useState<FilterTimeRange>("all");
   const [statusFilter, setStatusFilter] = useState<AppointmentStatus>("CONVERTED");
-  const [showFilters, setShowFilters] = useState(false);
   const [serviceFilter, setServiceFilter] = useState("");
   const [availableStatuses, setAvailableStatuses] = useState<string[]>([]);
+  
+  // Add date range state variables
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [tempStartDate, setTempStartDate] = useState<Date | undefined>(undefined);
+  const [tempEndDate, setTempEndDate] = useState<Date | undefined>(undefined);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   
   // Fetch all statuses from the API
   const { data: statuses } = useGetAllStatusQuery();
@@ -65,6 +80,10 @@ export default function ConvertedAppointmentsPage() {
 
   const handleTimeRangeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setTimeRange(e.target.value as FilterTimeRange);
+    // Clear date range when time range filter is used
+    if (e.target.value !== 'all') {
+      clearDateRange();
+    }
   };
 
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -74,6 +93,24 @@ export default function ConvertedAppointmentsPage() {
   const handleServiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setServiceFilter(e.target.value);
   };
+  
+  const clearDateRange = () => {
+    setStartDate(undefined);
+    setEndDate(undefined);
+    setTempStartDate(undefined);
+    setTempEndDate(undefined);
+  };
+  
+  // Format start and end dates for display and API
+  const formattedStartDate = startDate ? format(startDate, 'yyyy-MM-dd') : '';
+  const formattedEndDate = endDate ? format(endDate, 'yyyy-MM-dd') : '';
+  
+  // Get display label for date range
+  const dateRangeLabel = startDate 
+    ? endDate 
+      ? `${format(startDate, 'MMM d, yyyy')} - ${format(endDate, 'MMM d, yyyy')}`
+      : `From ${format(startDate, 'MMM d, yyyy')}`
+    : 'Select dates';
 
   const handleEditAppointment = (appointment: Appointment) => {
     setSelectedAppointment(appointment);
@@ -109,95 +146,112 @@ export default function ConvertedAppointmentsPage() {
         <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800">
           <div className="p-4 border-b border-gray-200 dark:border-gray-800">
             <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2 flex-1">
-                <div className="relative flex-1 max-w-md">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
-                  <input
-                    type="search"
-                    placeholder="Search appointments..."
-                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 pl-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-600"
-                    value={searchQuery}
-                    onChange={handleSearch}
-                  />
-                </div>
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <Filter className="h-4 w-4" />
-                  Filters
-                </button>
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
+                <input
+                  type="search"
+                  placeholder="Search appointments..."
+                  className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 pl-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-600"
+                  value={searchQuery}
+                  onChange={handleSearch}
+                />
               </div>
               
-              <select
-                value={timeRange}
-                onChange={handleTimeRangeChange}
-                className="w-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-600"
-              >
-                <option value="all">All Time</option>
-                <option value="today">Today</option>
-                <option value="week">This Week</option>
-                <option value="month">This Month</option>
-              </select>
-            </div>
-            
-            {showFilters && (
-              <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Status
-                  </label>
-                  <select 
-                    className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm"
-                    value={statusFilter}
-                    onChange={handleStatusChange}
-                  >
-                    {availableStatuses.length > 0 ? (
-                      availableStatuses.map(status => (
-                        <option key={status} value={status}>{status}</option>
-                      ))
-                    ) : (
-                      <option value="CONVERTED">Converted</option>
-                    )}
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Service
-                  </label>
-                  <select 
-                    className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm"
-                    value={serviceFilter}
-                    onChange={handleServiceChange}
-                  >
-                    <option value="">All Services</option>
-                    <option value="Eye care">Eye care</option>
-                    <option value="Dental">Dental</option>
-                    <option value="General checkup">General checkup</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Source
-                  </label>
-                  <select className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm">
-                    <option value="">All Sources</option>
-                    <option value="whatsapp">WhatsApp</option>
-                    <option value="phone">Phone</option>
-                    <option value="facebook">Facebook</option>
-                    <option value="website">Website</option>
-                  </select>
-                </div>
+              <div className="flex items-center gap-3">
+                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                  <PopoverTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      className={cn(
+                        "justify-start text-left font-normal",
+                        (startDate || endDate) && "text-foreground"
+                      )}
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      <span>{dateRangeLabel}</span>
+                      {(startDate || endDate) && (
+                        <X 
+                          className="ml-2 h-4 w-4 text-muted-foreground hover:text-foreground" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            clearDateRange();
+                          }}
+                        />
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start" side="bottom" alignOffset={-10} sideOffset={5}>
+                    <div className="p-2 border-b">
+                      <div className="flex justify-between items-center">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="h-6 text-xs px-2 py-0" 
+                          onClick={() => {
+                            clearDateRange();
+                          }}
+                        >
+                          Clear
+                        </Button>
+                        <Button 
+                          size="sm"
+                          variant="default"
+                          className="h-6 text-xs px-2 py-0 bg-purple-600 hover:bg-purple-700 text-white"
+                          onClick={() => {
+                            setStartDate(tempStartDate);
+                            setEndDate(tempEndDate);
+                            if (tempStartDate) {
+                              setTimeRange('all');
+                            }
+                            setIsCalendarOpen(false);
+                          }}
+                        >
+                          <Check className="h-3 w-3 mr-1" />
+                          Apply
+                        </Button>
+                      </div>
+                    </div>
+                    <CalendarComponent
+                      mode="range"
+                      selected={{
+                        from: tempStartDate || startDate,
+                        to: tempEndDate || endDate,
+                      }}
+                      onSelect={(range) => {
+                        if (range?.from) {
+                          setTempStartDate(range.from);
+                          setTempEndDate(range.to);
+                        } else {
+                          setTempStartDate(undefined);
+                          setTempEndDate(undefined);
+                        }
+                      }}
+                      initialFocus
+                      className="scale-95 origin-top"
+                    />
+                  </PopoverContent>
+                </Popover>
+                <span className="text-gray-400">or</span>
+                <select
+                  value={timeRange}
+                  onChange={handleTimeRangeChange}
+                  className="w-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-600"
+                >
+                  <option value="all">All Time</option>
+                  <option value="today">Today</option>
+                  <option value="week">This Week</option>
+                  <option value="month">This Month</option>
+                </select>
               </div>
-            )}
+            </div>
           </div>
           
           <AppointmentsList 
             searchQuery={searchQuery}
             timeRange={timeRange}
             statusFilter={statusFilter}
+            fromDate={formattedStartDate}
+            toDate={formattedEndDate}
             onEdit={handleEditAppointment}
           />
         </div>

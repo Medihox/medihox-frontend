@@ -9,6 +9,10 @@ import {
   Menu, X, LogOut, Users, Settings, Building2, Package, LifeBuoy, CreditCard, ScrollText 
 } from "lucide-react";
 import { FaClinicMedical } from "react-icons/fa";
+import { useDispatch } from "react-redux";
+import { logout } from "@/lib/redux/slices/authSlice";
+import { toast } from "react-hot-toast";
+import axios from "axios";
 
 const menuItems = [
   { label: "Overview", icon: Building2, href: "/super-admin/dashboard" },
@@ -26,6 +30,8 @@ export function SuperAdminSidebar() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const dispatch = useDispatch();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     const checkScreenSize = () => setIsMobile(window.innerWidth < 768);
@@ -34,9 +40,66 @@ export function SuperAdminSidebar() {
     return () => window.removeEventListener("resize", checkScreenSize);
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    router.push("/login");
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      
+      // Close mobile menu if open
+      if (mobileNavOpen) {
+        setMobileNavOpen(false);
+      }
+      
+      // Call the server logout endpoint to clear HTTP-only cookies
+      try {
+        await axios.post('/api/auth/logout');
+      } catch (serverError) {
+        console.error("Server logout failed:", serverError);
+        // Continue with client-side logout even if server call fails
+      }
+      
+      // Clear all browser storage
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Clear specific tokens as a fallback
+      localStorage.removeItem("token");
+      localStorage.removeItem("refreshToken");
+      
+      // Clear cookies on the client side
+      const cookies = document.cookie.split(";");
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i];
+        const eqPos = cookie.indexOf("=");
+        const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
+      }
+      
+      // Also try to clear domain cookies
+      const domain = window.location.hostname;
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i];
+        const eqPos = cookie.indexOf("=");
+        const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${domain}`;
+      }
+      
+      // Dispatch the logout action to clear the Redux state
+      dispatch(logout());
+      
+      // Show success message
+      toast.success("Logged out successfully");
+      
+      // Redirect to login page after a short delay
+      // This ensures all cleanup operations complete before navigation
+      setTimeout(() => {
+        router.push("/login");
+      }, 100);
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast.error("Failed to log out. Please try again.");
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   return (
@@ -82,10 +145,20 @@ export function SuperAdminSidebar() {
           <div className="px-4 pb-4">
             <button
               onClick={handleLogout}
-              className="flex items-center gap-3 px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 transition-colors w-full"
+              disabled={isLoggingOut}
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 transition-colors w-full ${
+                isLoggingOut ? "opacity-70 cursor-not-allowed" : ""
+              }`}
             >
-              <LogOut className="h-5 w-5" />
-              {!collapsed && <span>Logout</span>}
+              {isLoggingOut ? (
+                <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              ) : (
+                <LogOut className="h-5 w-5" />
+              )}
+              {!collapsed && <span>{isLoggingOut ? "Logging out..." : "Logout"}</span>}
             </button>
           </div>
         </div>
@@ -139,9 +212,22 @@ export function SuperAdminSidebar() {
             </nav>
 
             <div className="p-4">
-              <button className="flex items-center gap-3 px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 transition-colors w-full">
-                <LogOut className="h-5 w-5" />
-                <span>Logout</span>
+              <button 
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 transition-colors w-full ${
+                  isLoggingOut ? "opacity-70 cursor-not-allowed" : ""
+                }`}
+              >
+                {isLoggingOut ? (
+                  <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                ) : (
+                  <LogOut className="h-5 w-5" />
+                )}
+                <span>{isLoggingOut ? "Logging out..." : "Logout"}</span>
               </button>
             </div>
           </motion.div>

@@ -3,9 +3,18 @@
 import { useState, useEffect } from "react";
 import { InquiryList } from "@/components/inquiries/InquiryList";
 import { InquiryDialog } from "@/components/inquiries/InquiryDialog";
-import { Search, Filter, Plus } from "lucide-react";
+import { Search, Plus, Calendar, Check, X } from "lucide-react";
 import { useGetAllStatusQuery } from "@/lib/redux/services/customizationApi";
 import { CsvOperations } from "@/components/inquiries/CsvOperations";
+import { format } from "date-fns";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
 export type FilterTimeRange = 'all' | 'today' | 'week' | 'month';
 export type InquiryStatus = string;
@@ -33,9 +42,15 @@ export default function InquiriesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [timeRange, setTimeRange] = useState<FilterTimeRange>("all");
   const [statusFilter, setStatusFilter] = useState<InquiryStatus>("all");
-  const [showFilters, setShowFilters] = useState(false);
   const [availableStatuses, setAvailableStatuses] = useState<string[]>([]);
   const [inquiryToEdit, setInquiryToEdit] = useState<Inquiry | undefined>(undefined);
+  
+  // Add date range state variables
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [tempStartDate, setTempStartDate] = useState<Date | undefined>(undefined);
+  const [tempEndDate, setTempEndDate] = useState<Date | undefined>(undefined);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   
   // Fetch all statuses from the API
   const { data: statuses } = useGetAllStatusQuery();
@@ -53,11 +68,33 @@ export default function InquiriesPage() {
 
   const handleTimeRangeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setTimeRange(e.target.value as FilterTimeRange);
+    // Clear date range when time range filter is used
+    if (e.target.value !== 'all') {
+      clearDateRange();
+    }
   };
 
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setStatusFilter(e.target.value);
   };
+  
+  const clearDateRange = () => {
+    setStartDate(undefined);
+    setEndDate(undefined);
+    setTempStartDate(undefined);
+    setTempEndDate(undefined);
+  };
+  
+  // Format start and end dates for display and API
+  const formattedStartDate = startDate ? format(startDate, 'yyyy-MM-dd') : '';
+  const formattedEndDate = endDate ? format(endDate, 'yyyy-MM-dd') : '';
+  
+  // Get display label for date range
+  const dateRangeLabel = startDate 
+    ? endDate 
+      ? `${format(startDate, 'MMM d, yyyy')} - ${format(endDate, 'MMM d, yyyy')}`
+      : `From ${format(startDate, 'MMM d, yyyy')}`
+    : 'Select dates';
 
   const handleEditInquiry = (inquiry: Inquiry) => {
     setInquiryToEdit(inquiry);
@@ -92,26 +129,91 @@ export default function InquiriesPage() {
         <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800">
           <div className="p-4 border-b border-gray-200 dark:border-gray-800">
             <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2 flex-1">
-                <div className="relative flex-1 max-w-md">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={handleSearch}
-                    placeholder="Search inquiries..."
-                    className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400"
-                  />
-                </div>
-                <button 
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <Filter className="h-4 w-4" />
-                  Filters
-                </button>
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={handleSearch}
+                  placeholder="Search inquiries..."
+                  className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400"
+                />
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                  <PopoverTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      className={cn(
+                        "justify-start text-left font-normal",
+                        (startDate || endDate) && "text-foreground"
+                      )}
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      <span>{dateRangeLabel}</span>
+                      {(startDate || endDate) && (
+                        <X 
+                          className="ml-2 h-4 w-4 text-muted-foreground hover:text-foreground" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            clearDateRange();
+                          }}
+                        />
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start" side="bottom" alignOffset={-10} sideOffset={5}>
+                    <div className="p-2 border-b">
+                      <div className="flex justify-between items-center">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="h-6 text-xs px-2 py-0" 
+                          onClick={() => {
+                            clearDateRange();
+                          }}
+                        >
+                          Clear
+                        </Button>
+                        <Button 
+                          size="sm"
+                          variant="default"
+                          className="h-6 text-xs px-2 py-0 bg-purple-600 hover:bg-purple-700 text-white"
+                          onClick={() => {
+                            setStartDate(tempStartDate);
+                            setEndDate(tempEndDate);
+                            if (tempStartDate) {
+                              setTimeRange('all');
+                            }
+                            setIsCalendarOpen(false);
+                          }}
+                        >
+                          <Check className="h-3 w-3 mr-1" />
+                          Apply
+                        </Button>
+                      </div>
+                    </div>
+                    <CalendarComponent
+                      mode="range"
+                      selected={{
+                        from: tempStartDate || startDate,
+                        to: tempEndDate || endDate,
+                      }}
+                      onSelect={(range) => {
+                        if (range?.from) {
+                          setTempStartDate(range.from);
+                          setTempEndDate(range.to);
+                        } else {
+                          setTempStartDate(undefined);
+                          setTempEndDate(undefined);
+                        }
+                      }}
+                      initialFocus
+                      className="scale-95 origin-top"
+                    />
+                  </PopoverContent>
+                </Popover>
+                <span className="text-gray-400">or</span>
                 <select
                   value={timeRange}
                   onChange={handleTimeRangeChange}
@@ -136,54 +238,14 @@ export default function InquiriesPage() {
                 </select>
               </div>
             </div>
-
-            {showFilters && (
-              <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Treatment
-                    </label>
-                    <select className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm">
-                      <option value="">All Treatments</option>
-                      <option value="general">General Checkup</option>
-                      <option value="dental">Dental Care</option>
-                      <option value="eye">Eye Care</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Source
-                    </label>
-                    <select className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm">
-                      <option value="">All Sources</option>
-                      <option value="WEBSITE">Website</option>
-                      <option value="DIRECT_CALL">Direct Call</option>
-                      <option value="FACEBOOK">Facebook</option>
-                      <option value="INSTAGRAM">Instagram</option>
-                      <option value="REFERRAL">Referral</option>
-                      <option value="WALK_IN">Walk-in</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Created By
-                    </label>
-                    <select className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm">
-                      <option value="">All Staff</option>
-                      <option value="dr-smith">Dr. Smith</option>
-                      <option value="dr-johnson">Dr. Johnson</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
           
           <InquiryList 
             searchQuery={searchQuery}
             timeRange={timeRange}
             statusFilter={statusFilter}
+            fromDate={formattedStartDate}
+            toDate={formattedEndDate}
             onEdit={handleEditInquiry}
           />
         </div>
