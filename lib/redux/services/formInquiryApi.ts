@@ -57,8 +57,8 @@ export interface InquiriesResponse {
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 // Create the API
-export const inquiryApi = createApi({
-  reducerPath: 'inquiryApi',
+export const formInquiryApi = createApi({
+  reducerPath: 'formInquiryApi',
   baseQuery: fetchBaseQuery({
     baseUrl: BASE_URL,
     prepareHeaders: (headers, { getState }) => {
@@ -139,4 +139,4 @@ export const {
   useCreateInquiryMutation,
   useUpdateInquiryMutation,
   useDeleteInquiryMutation,
-} = inquiryApi; 
+} = formInquiryApi; 

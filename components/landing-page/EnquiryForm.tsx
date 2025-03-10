@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useCreateInquiryMutation } from '@/lib/redux/services/inquiryApi';
+import { useCreateInquiryMutation } from '@/lib/redux/services/formInquiryApi';
 import { toast } from 'react-hot-toast';
 
 const EnquiryForm = () => {

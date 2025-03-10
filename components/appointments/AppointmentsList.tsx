@@ -119,6 +119,8 @@ interface AppointmentsListProps {
   searchQuery: string;
   timeRange: FilterTimeRange;
   statusFilter: AppointmentStatus | "all";
+  fromDate?: string;
+  toDate?: string;
   showOnlyEnquiries?: boolean;
   onEdit: (appointment: Appointment) => void;
 }
@@ -194,6 +196,8 @@ export function AppointmentsList({
   searchQuery, 
   timeRange, 
   statusFilter,
+  fromDate,
+  toDate,
   showOnlyEnquiries = false,
   onEdit
 }: AppointmentsListProps) {
@@ -211,43 +215,23 @@ export function AppointmentsList({
   const [updateAppointment, { isLoading: isUpdating }] = useUpdateAppointmentMutation();
   const [deleteAppointment, { isLoading: isDeleting }] = useDeleteAppointmentMutation();
   
-  // Improve filter creation to ensure proper values
-  const filters = React.useMemo(() => {
-    // Create a clean object with only defined filters
-    const result: Record<string, any> = {};
-    
-    // Only add search if it has a value
-    if (searchQuery && searchQuery.trim() !== '') {
-      result.search = searchQuery.trim();
-    }
-    
-    // Add time range filter if not 'all'
-    if (timeRange && timeRange !== 'all') {
-      result.timeRange = timeRange;
-    }
-    
-    // Add status filter if not 'all'
-    if (statusFilter && statusFilter !== 'all') {
-      result.status = statusFilter;
-    }
-    
-    // Always include pagination
-    result.page = page;
-    result.pageSize = pageSize;
-    
-    return result;
-  }, [searchQuery, timeRange, statusFilter, page, pageSize]);
-
-  // Add debugging to see what's being sent
-  console.log('Sending filters to API:', filters);
-  const { data, isLoading, error } = useGetAppointmentsQuery({
+  // Directly create API parameters object, bypassing the filters object to simplify
+  const apiParams = {
     page,
     pageSize,
-    search: searchQuery,
-    timeRange,
-    status: statusFilter === 'all' ? undefined : statusFilter,
-    isEnquiry: showOnlyEnquiries,
-  } as any);
+    search: searchQuery && searchQuery.trim() !== '' ? searchQuery.trim() : undefined,
+    timeRange: timeRange !== 'all' ? timeRange : undefined,
+    status: statusFilter !== 'all' ? statusFilter : undefined,
+    // Only include date parameters when they actually have values
+    ...(fromDate && fromDate.trim() !== '' ? { fromDate } : {}),
+    ...(toDate && toDate.trim() !== '' ? { toDate } : {}),
+    isEnquiry: showOnlyEnquiries || undefined,
+  };
+
+  // Add debugging to see what's being sent
+  console.log('Sending filters to API:', apiParams);
+  
+  const { data, isLoading, error } = useGetAppointmentsQuery(apiParams);
 
   // Extract appointments safely from the response
   const appointmentsData = React.useMemo(() => {

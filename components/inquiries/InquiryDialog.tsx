@@ -15,30 +15,42 @@ import { useCreateAppointmentMutation, useUpdateAppointmentMutation } from "@/li
 import { toast } from "react-hot-toast";
 import { getErrorMessage } from "@/lib/api/apiUtils";
 
-interface NewAppointmentDialogProps {
+interface InquiryDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  isEnquiry?: boolean;
   initialData?: any;
-  appointmentId?: string;
+  inquiryId?: string;
 }
 
-export function NewAppointmentDialog({ 
+interface Inquiry {
+  id: string;
+  patient?: {
+    name: string;
+    email: string;
+    phoneNumber: string;
+  };
+  status: string;
+  service: string;
+  source: string;
+  notes?: string;
+  createdAt?: string;
+}
+
+export function InquiryDialog({ 
   open, 
   onOpenChange,
-  isEnquiry = false,
   initialData,
-  appointmentId
-}: NewAppointmentDialogProps) {
+  inquiryId
+}: InquiryDialogProps) {
   // Fetch services and status options from API
   const { data: services, isLoading: isLoadingServices } = useGetAllServicesQuery();
   const { data: statuses, isLoading: isLoadingStatuses } = useGetAllStatusQuery();
   
-  // Add update mutation
-  const [createAppointment] = useCreateAppointmentMutation();
-  const [updateAppointment] = useUpdateAppointmentMutation();
+  // API mutations
+  const [createInquiry] = useCreateAppointmentMutation();
+  const [updateInquiry] = useUpdateAppointmentMutation();
   
-  // Initialize form state from initial data if provided
+  // Initialize form state
   const [formData, setFormData] = useState({
     patientName: "",
     patientEmail: "",
@@ -91,13 +103,13 @@ export function NewAppointmentDialog({
       const selectedStatus = statuses?.find(s => s.id === formData.status);
       
       // Format data for API
-      const appointmentData = {
+      const inquiryData = {
         patient: {
           name: formData.patientName,
           email: formData.patientEmail,
           phoneNumber: formData.patientPhone
         },
-        date: new Date().toISOString().split('T')[0],
+        date: new Date().toISOString().split('T')[0], // Add current date to satisfy API requirements
         service: selectedService?.name || formData.service,
         status: selectedStatus?.name || formData.status,
         source: formData.source,
@@ -105,20 +117,20 @@ export function NewAppointmentDialog({
       };
       
       // Create or update based on whether we have an ID
-      if (appointmentId) {
-        await updateAppointment({
-          id: appointmentId,
-          appointment: appointmentData
+      if (inquiryId) {
+        await updateInquiry({
+          id: inquiryId,
+          appointment: inquiryData
         }).unwrap();
-        toast.success(isEnquiry ? "Enquiry updated successfully" : "Appointment updated successfully");
+        toast.success("Inquiry updated successfully");
       } else {
-        await createAppointment(appointmentData).unwrap();
-        toast.success(isEnquiry ? "Enquiry created successfully" : "Appointment created successfully");
+        await createInquiry(inquiryData).unwrap();
+        toast.success("Inquiry created successfully");
       }
       
       onOpenChange(false);
     } catch (error) {
-      toast.error(getErrorMessage(error) || "Failed to save");
+      toast.error(getErrorMessage(error) || "Failed to save inquiry");
     } finally {
       setIsSubmitting(false);
     }
@@ -137,10 +149,7 @@ export function NewAppointmentDialog({
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>
-            {appointmentId 
-              ? (isEnquiry ? "Edit Enquiry" : "Edit Appointment") 
-              : (isEnquiry ? "New Enquiry" : "New Appointment")
-            }
+            {inquiryId ? "Edit Inquiry" : "New Inquiry"}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -274,15 +283,10 @@ export function NewAppointmentDialog({
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {appointmentId 
-                    ? (isEnquiry ? "Updating Enquiry..." : "Updating...") 
-                    : (isEnquiry ? "Creating Enquiry..." : "Creating...")
-                  }
+                  {inquiryId ? "Updating Inquiry..." : "Creating Inquiry..."}
                 </>
               ) : (
-                appointmentId 
-                ? (isEnquiry ? "Update Enquiry" : "Update") 
-                : (isEnquiry ? "Create Enquiry" : "Create")
+                inquiryId ? "Update Inquiry" : "Create Inquiry"
               )}
             </Button>
           </div>
@@ -290,4 +294,4 @@ export function NewAppointmentDialog({
       </DialogContent>
     </Dialog>
   );
-}
+} 

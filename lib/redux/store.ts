@@ -10,7 +10,7 @@ import { userApi } from './services/userApi';
 import { customizationApi } from './services/customizationApi';
 import { dashboardApi } from './services/dashboardApi';
 import { superAdminApi } from './services/superAdminApi';
-import { inquiryApi } from './services/inquiryApi';
+import { formInquiryApi } from './services/formInquiryApi';
 
 // Create a custom storage object that checks for browser environment
 const createNoopStorage = () => {
@@ -47,7 +47,7 @@ const rootReducer = combineReducers({
   [customizationApi.reducerPath]: customizationApi.reducer,
   [dashboardApi.reducerPath]: dashboardApi.reducer,
   [superAdminApi.reducerPath]: superAdminApi.reducer,
-  [inquiryApi.reducerPath]: inquiryApi.reducer,
+  [formInquiryApi.reducerPath]: formInquiryApi.reducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
@@ -67,7 +67,7 @@ export const store = configureStore({
       customizationApi.middleware,
       dashboardApi.middleware,
       superAdminApi.middleware,
-      inquiryApi.middleware
+      formInquiryApi.middleware
     ),
 });
 

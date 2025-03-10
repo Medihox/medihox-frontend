@@ -5,7 +5,6 @@ import { AppointmentsList } from "@/components/appointments/AppointmentsList";
 import { AppointmentDialog } from "@/components/appointments/AppointmentDialog";
 import { Search, Filter, Plus, CheckCircle } from "lucide-react";
 import { useGetAllStatusQuery } from "@/lib/redux/services/customizationApi";
-import { CsvOperations } from "@/components/appointments/CsvOperations";
 
 interface Appointment {
   id: string;
@@ -104,9 +103,6 @@ export default function ConvertedAppointmentsPage() {
               </span>
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">View and manage all converted patient's history</p>
-          </div>
-          <div className="flex gap-2">
-            <CsvOperations />
           </div>
         </div>
 
