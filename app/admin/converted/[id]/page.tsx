@@ -14,7 +14,7 @@ import { useGetAppointmentByIdQuery, useDeleteAppointmentMutation } from "@/lib/
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "react-hot-toast";
 import { getErrorMessage } from "@/lib/api/apiUtils";
-import { AppointmentDialog } from "@/components/appointments/AppointmentDialog";
+import { ConvertedDialog } from "@/components/converted/ConvertedDialog";
 import { 
   Card,
   CardContent,
@@ -94,7 +94,7 @@ const formatDate = (dateString: string) => {
   }
 };
 
-export default function AppointmentDetailsPage() {
+export default function ConvertedDetailsPage() {
   const router = useRouter();
   const params = useParams();
   const appointmentId = params.id as string;
@@ -107,18 +107,18 @@ export default function AppointmentDetailsPage() {
   const { data, isLoading, error } = useGetAppointmentByIdQuery(appointmentId);
   const [deleteAppointment, { isLoading: isDeleting }] = useDeleteAppointmentMutation();
   
-  const appointment = data?.appointment;
+  const converted = data?.appointment;
 
   // Handle navigation to patient page
   const handlePatientClick = () => {
-    if (appointment?.patient?.id) {
-      router.push(`/admin/patients/${appointment.patient.id}`);
+    if (converted?.patient?.id) {
+      router.push(`/admin/patients/${converted.patient.id}`);
     }
   };
 
-  // Handle going back to the appointments list
+  // Handle going back to the converted list
   const handleBack = () => {
-    router.push('/admin/appointments');
+    router.push('/admin/converted');
   };
   
   // Handle opening the edit dialog
@@ -126,7 +126,7 @@ export default function AppointmentDetailsPage() {
     setIsEditDialogOpen(true);
   };
   
-  // Handle appointment deletion
+  // Handle converted record deletion
   const handleDelete = () => {
     setIsDeleteDialogOpen(true);
   };
@@ -134,10 +134,10 @@ export default function AppointmentDetailsPage() {
   const confirmDelete = async () => {
     try {
       await deleteAppointment(appointmentId).unwrap();
-      toast.success("Appointment deleted successfully");
-      router.push('/admin/appointments');
+      toast.success("Converted record deleted successfully");
+      router.push('/admin/converted');
     } catch (error) {
-      toast.error(getErrorMessage(error) || "Failed to delete appointment");
+      toast.error(getErrorMessage(error) || "Failed to delete converted record");
     } finally {
       setIsDeleteDialogOpen(false);
     }
@@ -145,13 +145,13 @@ export default function AppointmentDetailsPage() {
   
   // Handle WhatsApp click
   const handleWhatsAppClick = () => {
-    if (!appointment?.patient?.phoneNumber) {
+    if (!converted?.patient?.phoneNumber) {
       toast.error("No phone number available");
       return;
     }
     
     // Format phone number
-    let phoneNumber = appointment.patient.phoneNumber.replace(/[^\d+]/g, '');
+    let phoneNumber = converted.patient.phoneNumber.replace(/[^\d+]/g, '');
     
     // Add country code if needed
     if (!phoneNumber.startsWith('+')) {
@@ -165,15 +165,15 @@ export default function AppointmentDetailsPage() {
     }
     
     // Create message
-    const message = `Hello ${appointment.patient?.name || 'there'}! I'm reaching out regarding your appointment for ${appointment.service || 'our services'}.`;
+    const message = `Hello ${converted.patient?.name || 'there'}! I'm reaching out regarding your treatment for ${converted.service || 'our services'}.`;
     
     // Open WhatsApp
     window.open(`https://wa.me/${phoneNumber.replace(/\+/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   // Extract time from ISO date string
-  const appointmentTime = appointment?.date 
-    ? format(new Date(appointment.date), "h:mm a") 
+  const appointmentTime = converted?.date 
+    ? format(new Date(converted.date), "h:mm a") 
     : "N/A";
   
   if (error) {
@@ -182,13 +182,13 @@ export default function AppointmentDetailsPage() {
         <div className="mb-4 inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 text-red-500">
           <AlertCircle className="h-8 w-8" />
         </div>
-        <h2 className="text-2xl font-semibold mb-2">Error Loading Appointment</h2>
+        <h2 className="text-2xl font-semibold mb-2">Error Loading Converted Record</h2>
         <p className="text-gray-500 mb-4">
-          {getErrorMessage(error) || "There was an error loading the appointment details."}
+          {getErrorMessage(error) || "There was an error loading the converted record details."}
         </p>
         <Button onClick={handleBack} variant="outline">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Appointments
+          Back to Converted Records
         </Button>
       </div>
     );
@@ -203,42 +203,42 @@ export default function AppointmentDetailsPage() {
           className="mb-4"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Appointments
+          Back to Converted Records
         </Button>
 
         {isLoading ? (
-                <div className="space-y-4">
+          <div className="space-y-4">
             <Skeleton className="h-10 w-1/3" />
             <Skeleton className="h-6 w-1/4" />
           </div>
         ) : (
           <>
             <h1 className="text-2xl font-bold flex items-center">
-              {appointment?.service || 'Appointment'} for {appointment?.patient?.name || 'Unknown Patient'}
-                    <Badge 
+              {converted?.service || 'Treatment'} for {converted?.patient?.name || 'Unknown Patient'}
+              <Badge 
                 variant="outline" 
-                className={`ml-3 ${getStatusColor(appointment?.status || 'unknown')} border`}
-                    >
-                {appointment?.status || 'Unknown Status'}
-                    </Badge>
+                className={`ml-3 ${getStatusColor(converted?.status || 'unknown')} border`}
+              >
+                {converted?.status || 'Unknown Status'}
+              </Badge>
             </h1>
             <p className="text-gray-500 dark:text-gray-400">
-              {appointment?.date ? `Scheduled for ${formatDate(appointment.date)}` : 'Date not specified'} • 
-              {appointment?.createdAt ? ` Created on ${formatDate(appointment.createdAt)}` : ' Creation date unknown'}
+              {converted?.date ? `Treatment date: ${formatDate(converted.date)}` : 'Date not specified'} • 
+              {converted?.createdAt ? ` Created on ${formatDate(converted.createdAt)}` : ' Creation date unknown'}
             </p>
           </>
         )}
-          </div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Appointment Details Card */}
+          {/* Converted Details Card */}
           <Card>
             <CardHeader>
-              <CardTitle>Appointment Details</CardTitle>
+              <CardTitle>Converted Record Details</CardTitle>
               <CardDescription>
-                Basic information about this appointment
+                Basic information about this treatment
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -255,27 +255,27 @@ export default function AppointmentDetailsPage() {
                       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Service</p>
                       <p className="text-base flex items-center gap-2">
                         <FileText className="h-4 w-4 text-gray-400" />
-                        {appointment?.service || 'Not specified'}
+                        {converted?.service || 'Not specified'}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Status</p>
                       <p className="text-base">
-                <Badge
+                        <Badge
                           variant="outline" 
-                          className={`${getStatusColor(appointment?.status || 'unknown')} border`}
+                          className={`${getStatusColor(converted?.status || 'unknown')} border`}
                         >
-                          {appointment?.status || 'Unknown'}
-                </Badge>
+                          {converted?.status || 'Unknown'}
+                        </Badge>
                       </p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Date</p>
                       <p className="text-base flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-gray-400" />
-                        {appointment?.date ? formatDate(appointment.date) : 'Not available'}
+                        {converted?.date ? formatDate(converted.date) : 'Not available'}
                       </p>
-              </div>
+                    </div>
                     <div>
                       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Time</p>
                       <p className="text-base flex items-center gap-2">
@@ -286,47 +286,47 @@ export default function AppointmentDetailsPage() {
                     <div>
                       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Source</p>
                       <p className="text-base flex items-center gap-2">
-                        <span>{getSourceIcon(appointment?.source || '')}</span>
-                        <span>{appointment?.source || 'Not specified'}</span>
+                        <span>{getSourceIcon(converted?.source || '')}</span>
+                        <span>{converted?.source || 'Not specified'}</span>
                       </p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Created At</p>
                       <p className="text-base flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-gray-400" />
-                        {appointment?.createdAt ? formatDate(appointment.createdAt) : 'Not available'}
+                        {converted?.createdAt ? formatDate(converted.createdAt) : 'Not available'}
                       </p>
                     </div>
                   </div>
                   
-                  {appointment?.notes && (
+                  {converted?.notes && (
                     <div className="mt-4">
                       <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Notes</p>
                       <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-md">
-                        <p className="text-sm whitespace-pre-wrap">{appointment.notes}</p>
-                </div>
-                  </div>
-                )}
+                        <p className="text-sm whitespace-pre-wrap">{converted.notes}</p>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </CardContent>
             <CardFooter className="border-t pt-4 flex justify-between">
               <Button variant="outline" onClick={handleEdit} disabled={isLoading}>
-                Edit Appointment
+                Edit Record
               </Button>
               <Button 
                 variant="destructive" 
                 onClick={handleDelete} 
                 disabled={isLoading}
               >
-                Delete Appointment
+                Delete Record
               </Button>
             </CardFooter>
           </Card>
           
           {/* Treatment Images */}
-          {(appointment?.beforeImages && appointment.beforeImages.length > 0) || 
-           (appointment?.afterImages && appointment.afterImages.length > 0) ? (
+          {(converted?.beforeImages && converted.beforeImages.length > 0) || 
+           (converted?.afterImages && converted.afterImages.length > 0) ? (
             <Card>
               <CardHeader>
                 <CardTitle>Treatment Images</CardTitle>
@@ -335,57 +335,57 @@ export default function AppointmentDetailsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {appointment?.beforeImages && appointment.beforeImages.length > 0 && (
+                {converted?.beforeImages && converted.beforeImages.length > 0 && (
                   <div className="space-y-2">
                     <h3 className="text-md font-medium flex items-center gap-2">
                       <ImageIcon className="h-4 w-4" />
                       Before Treatment
                     </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                {appointment.beforeImages.map((image: string, index: number) => (
-                  <div
-                    key={`before-${index}`}
-                    className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700"
-                  >
-                    <Image
-                      src={image}
-                      alt={`Before treatment ${index + 1}`}
-                      fill={true}
-                      sizes="(max-width: 768px) 50vw, 25vw"
-                      className="object-cover hover:scale-105 transition-transform cursor-pointer"
-                      onClick={() => setSelectedImage(image)}
-                    />
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                      {converted.beforeImages.map((image: string, index: number) => (
+                        <div
+                          key={`before-${index}`}
+                          className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700"
+                        >
+                          <Image
+                            src={image}
+                            alt={`Before treatment ${index + 1}`}
+                            fill={true}
+                            sizes="(max-width: 768px) 50vw, 25vw"
+                            className="object-cover hover:scale-105 transition-transform cursor-pointer"
+                            onClick={() => setSelectedImage(image)}
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
+                )}
 
-                {appointment?.afterImages && appointment.afterImages.length > 0 && (
+                {converted?.afterImages && converted.afterImages.length > 0 && (
                   <div className="space-y-2">
                     <h3 className="text-md font-medium flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-green-500" />
                       After Treatment
                     </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                {appointment.afterImages.map((image: string, index: number) => (
-                  <div
-                    key={`after-${index}`}
-                    className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700"
-                  >
-                    <Image
-                      src={image}
-                      alt={`After treatment ${index + 1}`}
-                      fill={true}
-                      sizes="(max-width: 768px) 50vw, 25vw"
-                      className="object-cover hover:scale-105 transition-transform cursor-pointer"
-                      onClick={() => setSelectedImage(image)}
-                    />
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                      {converted.afterImages.map((image: string, index: number) => (
+                        <div
+                          key={`after-${index}`}
+                          className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700"
+                        >
+                          <Image
+                            src={image}
+                            alt={`After treatment ${index + 1}`}
+                            fill={true}
+                            sizes="(max-width: 768px) 50vw, 25vw"
+                            className="object-cover hover:scale-105 transition-transform cursor-pointer"
+                            onClick={() => setSelectedImage(image)}
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
+                )}
               </CardContent>
             </Card>
           ) : null}
@@ -413,7 +413,7 @@ export default function AppointmentDetailsPage() {
                   <div className="flex items-center space-x-3">
                     <Avatar className="h-12 w-12 bg-gray-100 dark:bg-gray-800">
                       <AvatarFallback className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                        {appointment?.patient?.name ? appointment.patient.name.charAt(0) : '?'}
+                        {converted?.patient?.name ? converted.patient.name.charAt(0) : '?'}
                       </AvatarFallback>
                     </Avatar>
                     <div>
@@ -421,10 +421,10 @@ export default function AppointmentDetailsPage() {
                         className="font-medium hover:text-purple-600 dark:hover:text-purple-400 cursor-pointer"
                         onClick={handlePatientClick}
                       >
-                        {appointment?.patient?.name || 'Unknown Patient'}
+                        {converted?.patient?.name || 'Unknown Patient'}
                       </p>
-                      {appointment?.patient?.city && (
-                        <p className="text-sm text-gray-500">{appointment.patient.city}</p>
+                      {converted?.patient?.city && (
+                        <p className="text-sm text-gray-500">{converted.patient.city}</p>
                       )}
                     </div>
                   </div>
@@ -432,31 +432,31 @@ export default function AppointmentDetailsPage() {
                   <Separator />
                   
                   <div className="space-y-3">
-                    {appointment?.patient?.email && (
+                    {converted?.patient?.email && (
                       <div className="flex items-center">
                         <Mail className="h-4 w-4 text-gray-400 mr-2" />
-                        <a href={`mailto:${appointment.patient.email}`} className="text-sm text-blue-600 hover:underline">
-                          {appointment.patient.email}
+                        <a href={`mailto:${converted.patient.email}`} className="text-sm text-blue-600 hover:underline">
+                          {converted.patient.email}
                         </a>
                       </div>
                     )}
                     
-                    {appointment?.patient?.phoneNumber && (
+                    {converted?.patient?.phoneNumber && (
                       <div className="flex items-center">
                         <Phone className="h-4 w-4 text-gray-400 mr-2" />
-                        <a href={`tel:${appointment.patient.phoneNumber}`} className="text-sm">
-                          {appointment.patient.phoneNumber}
+                        <a href={`tel:${converted.patient.phoneNumber}`} className="text-sm">
+                          {converted.patient.phoneNumber}
                         </a>
                       </div>
                     )}
                     
-                    {(appointment?.patient?.city || appointment?.patient?.country) && (
+                    {(converted?.patient?.city || converted?.patient?.country) && (
                       <div className="flex items-center">
                         <MapPin className="h-4 w-4 text-gray-400 mr-2" />
                         <span className="text-sm">
                           {[
-                            appointment.patient?.city,
-                            appointment.patient?.country
+                            converted.patient?.city,
+                            converted.patient?.country
                           ]
                             .filter(Boolean)
                             .join(", ")}
@@ -472,7 +472,7 @@ export default function AppointmentDetailsPage() {
                 <Button 
                   className="w-full bg-green-600 hover:bg-green-700" 
                   onClick={handleWhatsAppClick}
-                  disabled={isLoading || !appointment?.patient?.phoneNumber}
+                  disabled={isLoading || !converted?.patient?.phoneNumber}
                 >
                   <svg 
                     xmlns="http://www.w3.org/2000/svg" 
@@ -483,11 +483,11 @@ export default function AppointmentDetailsPage() {
                   </svg>
                   Contact via WhatsApp
                 </Button>
-                {appointment?.patient?.email && (
+                {converted?.patient?.email && (
                   <Button 
                     variant="outline" 
                     className="w-full"
-                    onClick={() => window.location.href = `mailto:${appointment.patient?.email}`}
+                    onClick={() => window.location.href = `mailto:${converted.patient?.email}`}
                   >
                     <Mail className="h-4 w-4 mr-2" />
                     Send Email
@@ -500,12 +500,32 @@ export default function AppointmentDetailsPage() {
       </div>
       
       {/* Edit Dialog */}
-      <AppointmentDialog
+      <ConvertedDialog
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
-        appointment={appointment}
+        convertedData={converted ? {
+          id: converted.id,
+          patient: converted.patient ? {
+            id: converted.patient.id,
+            name: converted.patient.name,
+            email: converted.patient.email,
+            phoneNumber: converted.patient.phoneNumber,
+            city: converted.patient.city || undefined,
+            country: converted.patient.country || undefined
+          } : undefined,
+          patientId: converted.patientId,
+          date: converted.date,
+          time: converted.time,
+          status: converted.status,
+          notes: converted.notes,
+          service: converted.service,
+          source: converted.source,
+          createdAt: converted.createdAt,
+          beforeImages: converted.beforeImages,
+          afterImages: converted.afterImages
+        } : undefined}
         onSave={() => {
-          toast.success("Appointment updated successfully");
+          toast.success("Converted record updated successfully");
           setIsEditDialogOpen(false);
         }}
       />
@@ -516,7 +536,7 @@ export default function AppointmentDetailsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this appointment. This action cannot be undone.
+              This will permanently delete this converted record. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

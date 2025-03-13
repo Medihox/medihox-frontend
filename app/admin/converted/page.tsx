@@ -1,268 +1,231 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { AppointmentsList } from "@/components/appointments/AppointmentsList";
-import { AppointmentDialog } from "@/components/appointments/AppointmentDialog";
-import { Search, Plus, CheckCircle, Calendar, Check, X } from "lucide-react";
-import { useGetAllStatusQuery } from "@/lib/redux/services/customizationApi";
-import { format } from "date-fns";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Calendar, Filter, FileText, Search, Loader2, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { 
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  Popover, PopoverContent, PopoverTrigger 
+} from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { ConvertedList } from "@/components/converted/ConvertedList";
+import { ConvertedDialog } from "@/components/converted/ConvertedDialog";
+import { useGetAllStatusQuery } from "@/lib/redux/services/customizationApi";
+import { DateRange } from "react-day-picker";
 
-interface Appointment {
-  id: string;
-  patient?: {
-    name: string;
-    email: string;
-    phoneNumber: string;
-    city: string;
-  };
-  date: string;
-  time?: string;
-  status: string;
-  notes?: string;
-  service: string;
-  source: string;
-  createdAt: string;
-}
-
-export type FilterTimeRange = 'all' | 'today' | 'week' | 'month';
-export type AppointmentStatus = string;
-
-export default function ConvertedAppointmentsPage() {
-  const [isAppointmentDialogOpen, setIsAppointmentDialogOpen] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | undefined>(undefined);
+export default function ConvertedPage() {
+  // State for filter and search
   const [searchQuery, setSearchQuery] = useState("");
-  const [timeRange, setTimeRange] = useState<FilterTimeRange>("all");
-  const [statusFilter, setStatusFilter] = useState<AppointmentStatus>("CONVERTED");
-  const [serviceFilter, setServiceFilter] = useState("");
-  const [availableStatuses, setAvailableStatuses] = useState<string[]>([]);
+  const [timeRange, setTimeRange] = useState<'all' | 'today' | 'week' | 'month'>('all');
+  const [statusFilter, setStatusFilter] = useState('CONVERTED'); // Default to CONVERTED status
+  const [showFilters, setShowFilters] = useState(false);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
   
-  // Add date range state variables
-  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
-  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-  const [tempStartDate, setTempStartDate] = useState<Date | undefined>(undefined);
-  const [tempEndDate, setTempEndDate] = useState<Date | undefined>(undefined);
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  // State for dialog
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedConverted, setSelectedConverted] = useState<any>(null);
   
-  // Fetch all statuses from the API
-  const { data: statuses } = useGetAllStatusQuery();
+  // Fetch statuses for filter
+  const { data: statuses, isLoading: isLoadingStatuses } = useGetAllStatusQuery();
   
-  // Filter for converted-related statuses
+  // Filter statuses to only include converted ones
+  const convertedStatuses = statuses?.filter(status => 
+    status.name.toLowerCase().includes('convert')
+  ) || [];
+  
+  // Set default status to CONVERTED if available in statuses
   useEffect(() => {
-    if (statuses) {
-      const convertedStatuses = statuses.filter(status => 
-        status.name.toLowerCase().includes('convert') || 
-        status.name === "CONVERTED"
-      );
-      
-      // Set available statuses for filtering
-      setAvailableStatuses(convertedStatuses.map(s => s.name));
-      
-      // Make sure CONVERTED status is available or use the first status
-      if (convertedStatuses.length > 0) {
-        if (!convertedStatuses.some(s => s.name === "CONVERTED")) {
-          setStatusFilter(convertedStatuses[0].name);
-        }
+    if (statuses && statuses.length > 0) {
+      const hasConverted = statuses.some(status => status.name === "CONVERTED");
+      if (hasConverted) {
+        setStatusFilter("CONVERTED");
+      } else if (convertedStatuses.length > 0) {
+        setStatusFilter(convertedStatuses[0].name);
       }
     }
-  }, [statuses]);
-
+  }, [statuses, convertedStatuses]);
+  
+  // Handle search
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
   };
-
-  const handleTimeRangeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setTimeRange(e.target.value as FilterTimeRange);
-    // Clear date range when time range filter is used
-    if (e.target.value !== 'all') {
-      clearDateRange();
-    }
-  };
-
-  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setStatusFilter(e.target.value);
-  };
-
-  const handleServiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setServiceFilter(e.target.value);
+  
+  // Handle time range filter
+  const handleTimeRangeChange = (value: string) => {
+    setTimeRange(value as 'all' | 'today' | 'week' | 'month');
   };
   
-  const clearDateRange = () => {
-    setStartDate(undefined);
-    setEndDate(undefined);
-    setTempStartDate(undefined);
-    setTempEndDate(undefined);
+  // Handle status filter
+  const handleStatusFilterChange = (value: string) => {
+    setStatusFilter(value);
   };
   
-  // Format start and end dates for display and API
-  const formattedStartDate = startDate ? format(startDate, 'yyyy-MM-dd') : '';
-  const formattedEndDate = endDate ? format(endDate, 'yyyy-MM-dd') : '';
+  // Handle edit click
+  const handleEdit = (converted: any) => {
+    setSelectedConverted(converted);
+    setIsEditDialogOpen(true);
+  };
   
-  // Get display label for date range
-  const dateRangeLabel = startDate 
-    ? endDate 
-      ? `${format(startDate, 'MMM d, yyyy')} - ${format(endDate, 'MMM d, yyyy')}`
-      : `From ${format(startDate, 'MMM d, yyyy')}`
-    : 'Select dates';
-
-  const handleEditAppointment = (appointment: Appointment) => {
-    setSelectedAppointment(appointment);
-    setIsAppointmentDialogOpen(true);
+  // Format date for display
+  const formatDate = (date?: Date) => {
+    if (!date) return "";
+    return format(date, "MMM dd, yyyy");
   };
-
-  const handleCreateAppointment = (appointmentData: Partial<Appointment>) => {
-    if (selectedAppointment) {
-      console.log('Updating appointment:', appointmentData);
-      // Add your update logic here
-    } else {
-      console.log('Creating new appointment:', appointmentData);
-    }
-    setIsAppointmentDialogOpen(false);
-    setSelectedAppointment(undefined);
+  
+  // Handle save after edit
+  const handleSaveAfterEdit = () => {
+    setIsEditDialogOpen(false);
+    setSelectedConverted(null);
   };
-
+  
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors">      
-      <div className="p-8">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
-              <span className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-500" />
-                Converted Patient's History
-              </span>
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">View and manage all converted patient's history</p>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800">
-          <div className="p-4 border-b border-gray-200 dark:border-gray-800">
-            <div className="flex items-center justify-between gap-4">
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
-                <input
-                  type="search"
-                  placeholder="Search appointments..."
-                  className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 pl-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-600"
-                  value={searchQuery}
-                  onChange={handleSearch}
-                />
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                  <PopoverTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      className={cn(
-                        "justify-start text-left font-normal",
-                        (startDate || endDate) && "text-foreground"
-                      )}
-                    >
-                      <Calendar className="mr-2 h-4 w-4" />
-                      <span>{dateRangeLabel}</span>
-                      {(startDate || endDate) && (
-                        <X 
-                          className="ml-2 h-4 w-4 text-muted-foreground hover:text-foreground" 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            clearDateRange();
-                          }}
-                        />
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start" side="bottom" alignOffset={-10} sideOffset={5}>
-                    <div className="p-2 border-b">
-                      <div className="flex justify-between items-center">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          className="h-6 text-xs px-2 py-0" 
-                          onClick={() => {
-                            clearDateRange();
-                          }}
-                        >
-                          Clear
-                        </Button>
-                        <Button 
-                          size="sm"
-                          variant="default"
-                          className="h-6 text-xs px-2 py-0 bg-purple-600 hover:bg-purple-700 text-white"
-                          onClick={() => {
-                            setStartDate(tempStartDate);
-                            setEndDate(tempEndDate);
-                            if (tempStartDate) {
-                              setTimeRange('all');
-                            }
-                            setIsCalendarOpen(false);
-                          }}
-                        >
-                          <Check className="h-3 w-3 mr-1" />
-                          Apply
-                        </Button>
-                      </div>
-                    </div>
-                    <CalendarComponent
-                      mode="range"
-                      selected={{
-                        from: tempStartDate || startDate,
-                        to: tempEndDate || endDate,
-                      }}
-                      onSelect={(range) => {
-                        if (range?.from) {
-                          setTempStartDate(range.from);
-                          setTempEndDate(range.to);
-                        } else {
-                          setTempStartDate(undefined);
-                          setTempEndDate(undefined);
-                        }
-                      }}
-                      initialFocus
-                      className="scale-95 origin-top"
-                    />
-                  </PopoverContent>
-                </Popover>
-                <span className="text-gray-400">or</span>
-                <select
-                  value={timeRange}
-                  onChange={handleTimeRangeChange}
-                  className="w-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-600"
-                >
-                  <option value="all">All Time</option>
-                  <option value="today">Today</option>
-                  <option value="week">This Week</option>
-                  <option value="month">This Month</option>
-                </select>
-              </div>
-            </div>
-          </div>
-          
-          <AppointmentsList 
-            searchQuery={searchQuery}
-            timeRange={timeRange}
-            statusFilter={statusFilter}
-            fromDate={formattedStartDate}
-            toDate={formattedEndDate}
-            onEdit={handleEditAppointment}
-          />
+    <div className="h-full flex-1 flex flex-col space-y-4 p-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Converted Records</h2>
+          <p className="text-muted-foreground">
+            View and manage patients who have converted to treatment
+          </p>
         </div>
       </div>
-
-      <AppointmentDialog 
-        open={isAppointmentDialogOpen}
-        onOpenChange={setIsAppointmentDialogOpen}
-        onSave={handleCreateAppointment}
-        appointment={selectedAppointment}
-      />
+      
+      <Separator />
+      
+      <div className="flex flex-col space-y-4">
+        <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search by patient name, phone, or service..."
+              className="pl-8 w-full"
+              value={searchQuery}
+              onChange={handleSearch}
+            />
+          </div>
+          
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setShowFilters(!showFilters)}
+            className={cn(showFilters ? "bg-accent" : "")}
+          >
+            <Filter className="h-4 w-4" />
+            <span className="sr-only">Filter</span>
+          </Button>
+        </div>
+        
+        {showFilters && (
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <div className="flex flex-col space-y-1.5">
+              <label className="text-sm font-medium">Time Period</label>
+              <Select value={timeRange} onValueChange={handleTimeRangeChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select time range" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="week">This Week</SelectItem>
+                  <SelectItem value="month">This Month</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex flex-col space-y-1.5">
+              <label className="text-sm font-medium">Status</label>
+              <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CONVERTED">Converted</SelectItem>
+                  {isLoadingStatuses ? (
+                    <SelectItem value="loading" disabled>
+                      <div className="flex items-center">
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Loading...
+                      </div>
+                    </SelectItem>
+                  ) : (
+                    convertedStatuses
+                      .filter(status => status.name !== "CONVERTED") // Filter out CONVERTED to avoid duplication
+                      .map((status) => (
+                        <SelectItem key={status.id} value={status.name}>
+                          {status.name}
+                        </SelectItem>
+                      ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex flex-col space-y-1.5">
+              <label className="text-sm font-medium">Custom Date Range</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "justify-start text-left font-normal",
+                      !dateRange?.from && "text-muted-foreground"
+                    )}
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {dateRange?.from ? (
+                      dateRange?.to ? (
+                        <>
+                          {formatDate(dateRange.from)} - {formatDate(dateRange.to)}
+                        </>
+                      ) : (
+                        formatDate(dateRange.from)
+                      )
+                    ) : (
+                      "Pick a date range"
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    initialFocus
+                    mode="range"
+                    selected={dateRange}
+                    onSelect={setDateRange}
+                    numberOfMonths={2}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+        )}
+      </div>
+      
+      <div className="flex-1 bg-white dark:bg-gray-950 border rounded-md overflow-hidden">
+        <ConvertedList
+          searchQuery={searchQuery}
+          timeRange={timeRange}
+          statusFilter={statusFilter}
+          fromDate={dateRange?.from?.toISOString()}
+          toDate={dateRange?.to?.toISOString()}
+          onEdit={handleEdit}
+        />
+      </div>
+      
+      {selectedConverted && (
+        <ConvertedDialog
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          convertedData={selectedConverted}
+          onSave={handleSaveAfterEdit}
+        />
+      )}
     </div>
   );
 } 
