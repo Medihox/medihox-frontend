@@ -280,18 +280,24 @@ export default function LandingPage() {
 
   // Prevent scrolling when mobile menu is open
   useEffect(() => {
+    // Apply overflow-x-hidden to the document body on mount to prevent horizontal scrolling
+    document.body.classList.add('overflow-x-hidden');
+    
     if (isMobileMenuOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'auto';
     }
+    
     return () => {
       document.body.style.overflow = 'auto';
+      // Remove the class when component unmounts
+      document.body.classList.remove('overflow-x-hidden');
     };
   }, [isMobileMenuOpen]);
 
   return (
-    <>
+    <div className="overflow-x-hidden relative w-full">
       <SEOMetadata location={location} />
       
       {/* Mobile Menu */}
@@ -381,7 +387,7 @@ export default function LandingPage() {
               </div>
               
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-                #1 Medical <span className="from-green-500 to-lime-500 bg-gradient-to-r text-transparent bg-clip-text">Lead Management</span> Software in {displayLocation}
+                #1 Medical <span className="from-purple-700 to-teal-500  bg-gradient-to-r text-transparent bg-clip-text">Lead Management</span> Software in {displayLocation}
               </h1>
               
               <p className="text-lg md:text-xl text-muted-foreground mb-8 leading-relaxed">
@@ -482,11 +488,11 @@ export default function LandingPage() {
               >
                 <div className="bg-green-50 dark:bg-green-900/30 p-2 rounded-full">
                   <ArrowUp className="h-5 w-5 text-green-500" />
-                </div>
+          </div>
                 <div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Conversion Rate</p>
                   <p className="font-bold">+27% <span className="text-xs font-normal">this month</span></p>
-                </div>
+        </div>
               </motion.div>
               
               {/* New Leads Stats Card */}
@@ -499,11 +505,11 @@ export default function LandingPage() {
                 <div className="flex items-center gap-2 mb-1">
                   <Users className="h-4 w-4 text-purple-500" />
                   <p className="font-medium text-sm">New Leads</p>
-                </div>
+          </div>
                 <p className="font-bold text-lg">128 <span className="text-xs font-normal text-gray-500">today</span></p>
               </motion.div>
-            </div>
           </div>
+        </div>
           
           {/* Mobile View - Redesigned */}
           <div className="md:hidden flex flex-col">
@@ -519,10 +525,10 @@ export default function LandingPage() {
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
                 </span>
                 <span className="text-sm font-medium">#{displayLocation}'s Top Medical CRM</span>
-              </div>
+            </div>
               
               <h1 className="text-3xl font-bold tracking-tight mb-4 text-center">
-                #1 Medical <span className="from-green-500 to-lime-500 bg-gradient-to-r text-transparent bg-clip-text">Lead Management</span> in {displayLocation}
+                #1 Medical <span className="from-purple-700 to-purple-900 bg-gradient-to-r text-transparent bg-clip-text">Lead Management</span> in {displayLocation}
               </h1>
               <p className="text-base text-muted-foreground mb-6 text-center">
                 Trusted by leading hospitals & clinics in {displayLocation} to capture, track, and convert patient leads.
@@ -540,17 +546,17 @@ export default function LandingPage() {
               >
                 {/* Light Mode Image */}
                 <div className="dark:hidden overflow-hidden rounded-xl">
-                  <Image 
-                    src="/dashboard_light.png" 
-                    alt="Dashboard Preview - Light Mode" 
+                    <Image 
+                      src="/dashboard_light.png" 
+                      alt="Dashboard Preview - Light Mode" 
                     width={800}
                     height={480}
-                    className="w-full h-auto"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = "https://placehold.co/800x500/e2e8f0/64748b?text=Dashboard+Preview";
-                    }}
-                  />
+                      className="w-full h-auto"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = "https://placehold.co/800x500/e2e8f0/64748b?text=Dashboard+Preview";
+                      }}
+                    />
                   {/* Window Controls */}
                   <div className="absolute top-3 right-3 flex gap-1.5">
                     <div className="h-2.5 w-2.5 rounded-full bg-red-400"></div>
@@ -561,17 +567,17 @@ export default function LandingPage() {
                 
                 {/* Dark Mode Image */}
                 <div className="hidden dark:block overflow-hidden rounded-xl">
-                  <Image 
-                    src="/dashboard_dark.png" 
-                    alt="Dashboard Preview - Dark Mode" 
+                    <Image 
+                      src="/dashboard_dark.png" 
+                      alt="Dashboard Preview - Dark Mode" 
                     width={800}
                     height={480}
-                    className="w-full h-auto"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = "https://placehold.co/800x500/1e293b/94a3b8?text=Dashboard+Preview";
-                    }}
-                  />
+                      className="w-full h-auto"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = "https://placehold.co/800x500/1e293b/94a3b8?text=Dashboard+Preview";
+                      }}
+                    />
                   {/* Window Controls */}
                   <div className="absolute top-3 right-3 flex gap-1.5">
                     <div className="h-2.5 w-2.5 rounded-full bg-red-400"></div>
@@ -588,7 +594,7 @@ export default function LandingPage() {
                 {/* Established year badge */}
                 <div className="absolute bottom-4 left-4 bg-black/70 text-white text-xs px-2 py-1 rounded-md z-10">
                   ESTD. 2025
-                </div>
+                  </div>
               </motion.div>
               
               {/* Conversion Rate Stats Card */}
@@ -600,7 +606,7 @@ export default function LandingPage() {
               >
                 <div className="bg-green-50 dark:bg-green-900/30 p-1.5 rounded-full">
                   <ArrowUp className="h-4 w-4 text-green-500" />
-                </div>
+                  </div>
                 <div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Conversion</p>
                   <p className="font-bold text-sm">+27%</p>
@@ -640,13 +646,13 @@ export default function LandingPage() {
                     Schedule Demo
                   </Button>
                 </Link>
-              </div>
+                  </div>
               
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Check className="h-4 w-4 text-primary" />
                   <span>No credit card required</span>
-                </div>
+                  </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Check className="h-4 w-4 text-primary" />
                   <span>14-day free trial</span>
@@ -664,10 +670,10 @@ export default function LandingPage() {
             <h2 className="text-2xl md:text-3xl font-bold mb-3">
               Powering Patient Acquisition For Leading Healthcare Providers in {displayLocation}
             </h2>
-            <p className="text-muted-foreground">
+                  <p className="text-muted-foreground">
               Trusted by top medical facilities across {displayLocation}
-            </p>
-          </div>
+                  </p>
+                </div>
           <div className="flex flex-wrap justify-center items-center gap-6 md:gap-8 lg:gap-16">
             {/* Placeholder for client logos */}
             {currentLocationData.partners.map((client) => (
@@ -741,9 +747,9 @@ export default function LandingPage() {
               <div className="flex items-center gap-4 mb-4">
                 <div className="h-12 w-12 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600">
                   <Calendar className="h-6 w-6" />
-                </div>
+          </div>
                 <h3 className="text-xl font-semibold">Appointment Scheduling</h3>
-              </div>
+        </div>
               
               <p className="text-muted-foreground mb-6">
                 Seamlessly convert leads to patients with our intelligent scheduling system that integrates with your calendar.
@@ -772,7 +778,7 @@ export default function LandingPage() {
               <div className="flex items-center gap-4 mb-4">
                 <div className="h-12 w-12 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600">
                   <Activity className="h-6 w-6" />
-                </div>
+            </div>
                 <h3 className="text-xl font-semibold">Lead Tracking</h3>
               </div>
               
@@ -895,613 +901,6 @@ export default function LandingPage() {
         </div>
       </section>
       
-      {/* Region-Specific Benefits Section */}
-      <section className="py-16 md:py-20 bg-muted/30 relative overflow-hidden">
-        <div className="absolute top-1/4 right-1/2 w-64 h-64 bg-primary/5 rounded-full filter blur-3xl -z-10"></div>
-        
-        <div className="container mx-auto px-4 md:px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-            className="text-center mb-12"
-          >
-            <div className="inline-block px-4 py-1 mb-4 text-sm font-medium text-primary bg-primary/10 rounded-full">
-              Region-Specific Features
-            </div>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Optimized for Healthcare in {displayLocation}
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-              Our platform is specially adapted to meet the unique needs of medical practices in {displayLocation}
-            </p>
-          </motion.div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {currentLocationData.regionBenefits.map((benefit, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: index * 0.1 }}
-                viewport={{ once: true }}
-                className="flex items-start gap-3 bg-card p-4 rounded-lg border shadow-sm"
-              >
-                <CheckCircle className="h-6 w-6 text-green-500 shrink-0 mt-0.5" />
-                <p className="font-medium">{benefit}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-      
-      {/* Product Demo/Showcase Section */}
-      <section className="py-20 md:py-28 bg-gradient-to-b from-background to-muted/30 relative overflow-hidden">
-        {/* Background decoration elements */}
-        <div className="absolute top-1/4 left-1/3 w-64 h-64 bg-primary/10 rounded-full filter blur-3xl -z-10"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-green-500/10 rounded-full filter blur-3xl -z-10"></div>
-        
-        <div className="container mx-auto px-4 md:px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-            className="text-center mb-12 md:mb-16"
-          >
-            <div className="inline-block px-4 py-1 mb-4 text-sm font-medium text-primary bg-primary/10 rounded-full">
-              Interactive Demo
-            </div>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 tracking-tight">
-              See Our Lead Management System <span className="text-primary">in Action</span>
-            </h2>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Experience how MediHox transforms the way healthcare providers capture, 
-              nurture, and convert patient leads into lasting relationships
-            </p>
-          </motion.div>
-          
-          {/* Custom Tabs Implementation */}
-          <div className="max-w-6xl mx-auto">
-            <Tabs defaultValue="dashboard" className="w-full">
-              <div className="relative mb-10">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-muted"></div>
-                </div>
-                <TabsList className="relative flex justify-center gap-1 md:gap-4 p-1 rounded-full bg-muted/50 backdrop-blur-sm mx-auto w-fit">
-                  <TabsTrigger 
-                    value="dashboard" 
-                    className="rounded-full px-5 py-2.5 text-sm md:text-base font-medium transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:shadow-sm"
-                  >
-                    Dashboard
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="appointments" 
-                    className="rounded-full px-5 py-2.5 text-sm md:text-base font-medium transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:shadow-sm"
-                  >
-                    Lead Management
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="patients" 
-                    className="rounded-full px-5 py-2.5 text-sm md:text-base font-medium transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:shadow-sm"
-                  >
-                    Analytics
-                  </TabsTrigger>
-              </TabsList>
-              </div>
-              
-              <div className="mt-8">
-                <TabsContent value="dashboard" className="mt-0">
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0.98 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.5 }}
-                    className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center"
-                  >
-                    <div className="order-2 md:order-1">
-                      <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.5, delay: 0.2 }}
-                      >
-                        <div className="inline-flex items-center gap-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full py-1 px-3 text-sm font-medium mb-4">
-                          <Activity className="h-4 w-4" />
-                          <span>Real-time Updates</span>
-                        </div>
-                        <h3 className="text-2xl md:text-3xl font-bold mb-4">Centralized Dashboard</h3>
-                        <p className="text-muted-foreground mb-6 text-lg leading-relaxed">
-                          Get a complete 360° view of your lead generation and conversion metrics, with key performance 
-                          indicators and conversion funnels all in one place.
-                        </p>
-                        
-                        <ul className="space-y-3 mb-6">
-                          {[
-                            'Real-time conversion tracking',
-                            'Customizable KPI widgets',
-                            'Lead source analytics',
-                            'Performance trends visualization'
-                          ].map((item, i) => (
-                            <motion.li 
-                              key={i} 
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ duration: 0.3, delay: 0.4 + (i * 0.1) }}
-                              className="flex items-start gap-2"
-                            >
-                              <motion.div
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ duration: 0.3, delay: 0.4 + (i * 0.1) }}
-                                className="flex items-center gap-2"
-                              >
-                                <CheckCircle className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
-                                <span>{item}</span>
-                              </motion.div>
-                            </motion.li>
-                          ))}
-                        </ul>
-                        
-                        <Link href="#enquiry" onClick={scrollToEnquiry}>
-                          <Button className="group rounded-full">
-                            Try Dashboard Demo
-                            <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                          </Button>
-                        </Link>
-                      </motion.div>
-                    </div>
-                    
-                    <div className="order-1 md:order-2">
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.3 }}
-                        className="relative"
-                      >
-                        {/* Dashboard preview with frame and effects */}
-                        <div className="rounded-xl overflow-hidden border shadow-xl bg-background">
-                          {/* Browser window header */}
-                          <div className="h-8 bg-muted/80 border-b flex items-center px-4">
-                            <div className="flex space-x-2">
-                              <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                              <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                            </div>
-                            <div className="mx-auto text-xs text-muted-foreground">
-                              MediHox Dashboard
-                            </div>
-                          </div>
-                          
-                          {/* Dashboard preview - Light mode */}
-                  <div className="dark:hidden relative">
-                    <Image 
-                      src="/dashboard_light.png" 
-                      alt="Dashboard Preview - Light Mode" 
-                      width={1200}
-                      height={720}
-                      className="w-full h-auto"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = "https://placehold.co/800x500/e2e8f0/64748b?text=Dashboard+Preview";
-                      }}
-                    />
-                  </div>
-                          
-                          {/* Dashboard preview - Dark mode */}
-                  <div className="hidden dark:block relative">
-                    <Image 
-                      src="/dashboard_dark.png" 
-                      alt="Dashboard Preview - Dark Mode" 
-                      width={1200}
-                      height={720}
-                      className="w-full h-auto"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = "https://placehold.co/800x500/1e293b/94a3b8?text=Dashboard+Preview";
-                      }}
-                    />
-                  </div>
-                </div>
-                        
-                        {/* Floating Stats Card */}
-                        <motion.div
-                          initial={{ opacity: 0, x: 20, y: 20 }}
-                          animate={{ opacity: 1, x: 0, y: 0 }}
-                          transition={{ duration: 0.5, delay: 0.8 }}
-                          className="absolute -bottom-6 -right-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3 border border-border z-10"
-                        >
-                          <div className="flex items-center gap-2 mb-1">
-                            <Users className="h-4 w-4 text-purple-500" />
-                            <p className="font-medium text-sm">New Leads Today</p>
-                </div>
-                          <p className="font-bold text-lg">128 <span className="text-xs font-normal text-green-500">↑12% from yesterday</span></p>
-                        </motion.div>
-                      </motion.div>
-                    </div>
-                  </motion.div>
-              </TabsContent>
-              
-                <TabsContent value="appointments" className="mt-0">
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0.98 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.5 }}
-                    className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center"
-                  >
-                    <div className="order-2 md:order-1">
-                      <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.5, delay: 0.2 }}
-                      >
-                        <div className="inline-flex items-center gap-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full py-1 px-3 text-sm font-medium mb-4">
-                          <Calendar className="h-4 w-4" />
-                          <span>Organized Workflows</span>
-                        </div>
-                        <h3 className="text-2xl md:text-3xl font-bold mb-4">Comprehensive Lead Management</h3>
-                        <p className="text-muted-foreground mb-6 text-lg leading-relaxed">
-                          Track and manage leads through every stage of your pipeline with our intuitive interface. 
-                          Easily categorize, prioritize, and follow up with potential patients.
-                        </p>
-                        
-                        <ul className="space-y-3 mb-6">
-                          {[
-                            'Visual pipeline management',
-                            'Automated lead scoring',
-                            'Follow-up reminders',
-                            'Integration with scheduling'
-                          ].map((item, i) => (
-                            <motion.li 
-                              key={i} 
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ duration: 0.3, delay: 0.4 + (i * 0.1) }}
-                              className="flex items-start gap-2"
-                            >
-                              <motion.div
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ duration: 0.3, delay: 0.4 + (i * 0.1) }}
-                                className="flex items-center gap-2"
-                              >
-                                <CheckCircle className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
-                                <span>{item}</span>
-                              </motion.div>
-                            </motion.li>
-                          ))}
-                        </ul>
-                        
-                        <Link href="#enquiry" onClick={scrollToEnquiry}>
-                          <Button className="group rounded-full">
-                            See Lead Management Demo
-                            <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                          </Button>
-                        </Link>
-                      </motion.div>
-                    </div>
-                    
-                    <div className="order-1 md:order-2">
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.3 }}
-                        className="relative"
-                      >
-                        {/* Lead Management preview with frame and effects */}
-                        <div className="rounded-xl overflow-hidden border shadow-xl bg-background">
-                          {/* Browser window header */}
-                          <div className="h-8 bg-muted/80 border-b flex items-center px-4">
-                            <div className="flex space-x-2">
-                              <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                              <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                            </div>
-                            <div className="mx-auto text-xs text-muted-foreground">
-                              MediHox Lead Pipeline
-                            </div>
-                          </div>
-                          
-                          {/* Appointment preview - Light mode */}
-                  <div className="dark:hidden relative">
-                    <Image 
-                      src="/appointment_light.png" 
-                              alt="Lead Management Preview - Light Mode" 
-                      width={1200}
-                      height={720}
-                      className="w-full h-auto"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                                target.src = "https://placehold.co/800x500/e2e8f0/64748b?text=Lead+Management+Preview";
-                      }}
-                    />
-                  </div>
-                          
-                          {/* Appointment preview - Dark mode */}
-                  <div className="hidden dark:block relative">
-                    <Image 
-                      src="/appointment_dark.png" 
-                              alt="Lead Management Preview - Dark Mode" 
-                      width={1200}
-                      height={720}
-                      className="w-full h-auto"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                                target.src = "https://placehold.co/800x500/1e293b/94a3b8?text=Lead+Management+Preview";
-                      }}
-                    />
-                  </div>
-                </div>
-                        
-                        {/* Floating task card */}
-                        <motion.div
-                          initial={{ opacity: 0, x: -20, y: 20 }}
-                          animate={{ opacity: 1, x: 0, y: 0 }}
-                          transition={{ duration: 0.5, delay: 0.8 }}
-                          className="absolute -bottom-6 -left-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3 border border-border z-10"
-                        >
-                          <div className="flex items-center gap-2 mb-1">
-                            <Calendar className="h-4 w-4 text-blue-500" />
-                            <p className="font-medium text-sm">Follow-ups Today</p>
-                </div>
-                          <p className="font-bold text-lg">24 <span className="text-xs font-normal text-green-500">5 completed</span></p>
-                        </motion.div>
-                      </motion.div>
-                    </div>
-                  </motion.div>
-              </TabsContent>
-              
-                <TabsContent value="patients" className="mt-0">
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0.98 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.5 }}
-                    className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center"
-                  >
-                    <div className="order-2 md:order-1">
-                      <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.5, delay: 0.2 }}
-                      >
-                        <div className="inline-flex items-center gap-2 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full py-1 px-3 text-sm font-medium mb-4">
-                          <BarChart3 className="h-4 w-4" />
-                          <span>Data-Driven Insights</span>
-                        </div>
-                        <h3 className="text-2xl md:text-3xl font-bold mb-4">Powerful Conversion Analytics</h3>
-                        <p className="text-muted-foreground mb-6 text-lg leading-relaxed">
-                          Analyze your lead-to-patient conversion rates with detailed analytics. Identify bottlenecks 
-                          in your sales funnel and optimize your marketing efforts for better ROI.
-                        </p>
-                        
-                        <ul className="space-y-3 mb-6">
-                          {[
-                            'Custom report builder',
-                            'Channel performance tracking',
-                            'Conversion funnel visualization',
-                            'ROI calculator by lead source'
-                          ].map((item, i) => (
-                            <motion.li 
-                              key={i} 
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ duration: 0.3, delay: 0.4 + (i * 0.1) }}
-                              className="flex items-start gap-2"
-                            >
-                              <motion.div
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ duration: 0.3, delay: 0.4 + (i * 0.1) }}
-                                className="flex items-center gap-2"
-                              >
-                                <CheckCircle className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
-                                <span>{item}</span>
-                              </motion.div>
-                            </motion.li>
-                          ))}
-                        </ul>
-                        
-                        <Link href="#enquiry" onClick={scrollToEnquiry}>
-                          <Button className="group rounded-full">
-                            Explore Analytics Demo
-                            <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                          </Button>
-                        </Link>
-                      </motion.div>
-                    </div>
-                    
-                    <div className="order-1 md:order-2">
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.3 }}
-                        className="relative"
-                      >
-                        {/* Analytics preview with frame and effects */}
-                        <div className="rounded-xl overflow-hidden border shadow-xl bg-background">
-                          {/* Browser window header */}
-                          <div className="h-8 bg-muted/80 border-b flex items-center px-4">
-                            <div className="flex space-x-2">
-                              <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                              <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                            </div>
-                            <div className="mx-auto text-xs text-muted-foreground">
-                              MediHox Analytics
-                            </div>
-                          </div>
-                          
-                          {/* Patient Records preview - Light mode */}
-                  <div className="dark:hidden relative">
-                    <Image 
-                      src="/patient_light.png" 
-                              alt="Analytics Preview - Light Mode" 
-                      width={1200}
-                      height={720}
-                      className="w-full h-auto"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                                target.src = "https://placehold.co/800x500/e2e8f0/64748b?text=Analytics+Preview";
-                      }}
-                    />
-                  </div>
-                          
-                          {/* Patient Records preview - Dark mode */}
-                  <div className="hidden dark:block relative">
-                    <Image 
-                      src="/patient_dark.png" 
-                              alt="Analytics Preview - Dark Mode" 
-                      width={1200}
-                      height={720}
-                      className="w-full h-auto"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                                target.src = "https://placehold.co/800x500/1e293b/94a3b8?text=Analytics+Preview";
-                      }}
-                    />
-                  </div>
-                </div>
-                        
-                        {/* Floating stats card */}
-                        <motion.div
-                          initial={{ opacity: 0, x: 20, y: -20 }}
-                          animate={{ opacity: 1, x: 0, y: 0 }}
-                          transition={{ duration: 0.5, delay: 0.8 }}
-                          className="absolute -top-6 -right-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3 border border-border z-10"
-                        >
-                          <div className="flex items-center gap-2 mb-1">
-                            <ArrowUpRight className="h-4 w-4 text-green-500" />
-                            <p className="font-medium text-sm">Conversion Rate</p>
-                </div>
-                          <p className="font-bold text-lg">27% <span className="text-xs font-normal text-green-500">↑4.5% this month</span></p>
-                        </motion.div>
-                      </motion.div>
-                    </div>
-                  </motion.div>
-              </TabsContent>
-              </div>
-            </Tabs>
-          </div>
-          
-          {/* Bottom CTA */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            viewport={{ once: true }}
-            className="flex flex-col items-center justify-center mt-16 md:mt-20"
-          >
-            <div className="p-1 rounded-full bg-primary/10 mb-6">
-              <div className="p-2 rounded-full bg-primary/20">
-                <ArrowDown className="h-6 w-6 text-primary" />
-              </div>
-            </div>
-            <p className="text-lg text-center mb-4 max-w-xl mx-auto">
-              Ready to see how MediHox can transform your healthcare practice?
-            </p>
-            <Link href="#enquiry" onClick={scrollToEnquiry}>
-              <Button size="lg" className="rounded-full px-8">Schedule a Live Demo</Button>
-            </Link>
-          </motion.div>
-        </div>
-      </section>
-      
-      {/* Testimonials Section */}
-      <section id="testimonials" className="py-16 md:py-20 bg-muted/50">
-        <div className="container mx-auto px-4 md:px-6">
-          <AnimatedSection>
-            <div className="text-center mb-12 md:mb-16">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 md:mb-4">
-                Trusted by Healthcare Professionals in {displayLocation}
-              </h2>
-              <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
-                See what leading medical providers in {displayLocation} are saying about our platform
-              </p>
-            </div>
-          </AnimatedSection>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-            {currentLocationData.testimonials.map((testimonial, index) => (
-              <AnimatedSection key={index}>
-                <TestimonialCard
-                  quote={testimonial.quote}
-                  author={testimonial.author}
-                  role={testimonial.role}
-                  stars={testimonial.stars}
-                />
-              </AnimatedSection>
-            ))}
-          </div>
-        </div>
-      </section>
-      
-      {/* Pricing Section */}
-      <section id="pricing" className="py-16 md:py-20">
-        <div className="container mx-auto px-4 md:px-6">
-          <AnimatedSection>
-            <div className="text-center mb-12 md:mb-16">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 md:mb-4">Simple, Transparent Pricing</h2>
-              <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
-                Choose the plan that fits your clinic's needs with no hidden fees
-              </p>
-            </div>
-          </AnimatedSection>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 max-w-5xl mx-auto">
-            <AnimatedSection>
-              <PricingTier
-                name="Starter"
-                price="15,000"
-                description="Perfect for small practices just getting started"
-                features={[
-                  "Up to 2 practitioners",
-                  "10000 patient records",
-                  "Basic appointment scheduling",
-                  "Patient reminders",
-                  "Standard support"
-                ]}
-                popular={false}
-              />
-            </AnimatedSection>
-            
-            <AnimatedSection>
-              <PricingTier
-                name="Professional"
-                price="20,000"
-                description="Ideal for growing medical practices"
-                features={[
-                  "Up to 10 practitioners",
-                  "Unlimited patient records",
-                  "Advanced scheduling",
-                  "Bulk data handling",
-                  "EHR integration",
-                  "Analytics dashboard",
-                  "Priority support"
-                ]}
-                popular={true}
-              />
-            </AnimatedSection>
-            
-            <AnimatedSection>
-              <PricingTier
-                name="Enterprise"
-                price="30,000"
-                description="For large clinics with advanced needs"
-                features={[
-                  "Unlimited practitioners",
-                  "Custom workflows",
-                  "Advanced analytics",
-                  "API access",
-                  "Custom integrations",
-                  "Training sessions",
-                  "Dedicated account manager"
-                ]}
-                popular={false}
-              />
-            </AnimatedSection>
-          </div>
-        </div>
-      </section>
-      
       {/* FAQ Section - Adding location-specific questions */}
       <section id="faq" className="py-16 md:py-20 bg-muted/50">
         <div className="container mx-auto px-4 md:px-6">
@@ -1562,6 +961,47 @@ export default function LandingPage() {
                 )}
               </Accordion>
             </AnimatedSection>
+          </div>
+        </div>
+      </section>
+      
+      {/* Region-Specific Benefits Section */}
+      <section className="py-16 md:py-20 bg-gradient-to-b from-background to-muted/30 relative overflow-hidden">
+        <div className="absolute top-1/4 right-1/2 w-64 h-64 bg-primary/5 rounded-full filter blur-3xl -z-10"></div>
+        
+        <div className="container mx-auto px-4 md:px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <div className="inline-block px-4 py-1 mb-4 text-sm font-medium text-primary bg-primary/10 rounded-full">
+              Region-Specific Features
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Optimized for Healthcare in {displayLocation}
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+              Our platform is specially adapted to meet the unique needs of medical practices in {displayLocation}
+            </p>
+          </motion.div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {currentLocationData.regionBenefits.map((benefit, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: index * 0.1 }}
+                viewport={{ once: true }}
+                className="flex items-start gap-3 bg-card p-4 rounded-lg border shadow-sm"
+              >
+                <CheckCircle className="h-6 w-6 text-green-500 shrink-0 mt-0.5" />
+                <p className="font-medium">{benefit}</p>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
@@ -1682,7 +1122,7 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
-    </>
+    </div>
   );
 }
 

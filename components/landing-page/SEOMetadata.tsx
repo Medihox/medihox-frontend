@@ -103,7 +103,7 @@ export default function SEOMetadata({ location = "India" }: SEOMetadataProps) {
       <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       
       {/* Structured data for rich snippets */}
-      <script 
+      <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
