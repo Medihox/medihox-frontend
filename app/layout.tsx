@@ -10,8 +10,8 @@ import { ReduxProviders } from '@/lib/redux/Provider';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Clinic Management System',
-  description: 'A comprehensive SAAS solution for clinic management',
+  title: 'MediHox - Lead Management for Healthcare Providers',
+  description: 'A comprehensive solution for lead management in hospitals, clinics, and healthcare facilities',
 };
 
 export default function RootLayout({

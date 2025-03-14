@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Menu, X, LogOut, Users, Settings, Building2, Package, LifeBuoy, CreditCard, ScrollText 
 } from "lucide-react";
-import { FaClinicMedical } from "react-icons/fa";
+import Image from "next/image";
 import { useDispatch } from "react-redux";
 import { logout } from "@/lib/redux/slices/authSlice";
 import { toast } from "react-hot-toast";
@@ -113,7 +113,14 @@ export function SuperAdminSidebar() {
         >
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-800">
             <div className="flex items-center gap-2">
-              <FaClinicMedical className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+              <div className="relative h-10 w-10">
+                <div className="dark:hidden">
+                  <Image src="/icon_light.png" alt="Logo" width={40} height={40} />
+                </div>
+                <div className="hidden dark:block">
+                  <Image src="/icon_dark.png" alt="Logo" width={40} height={40} />
+                </div>
+              </div>
               {!collapsed && <h1 className="text-xl font-bold text-gray-900 dark:text-white">Super Admin</h1>}
             </div>
             <button onClick={() => setCollapsed(!collapsed)} className="p-1 rounded-lg hover:bg-gray-100">
@@ -183,7 +190,17 @@ export function SuperAdminSidebar() {
             className="fixed top-0 right-0 h-screen w-64 bg-white dark:bg-gray-900 shadow-lg border-l z-50 flex flex-col"
           >
             <div className="p-4 flex justify-between items-center border-b border-gray-200 dark:border-gray-800">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Super Admin</h2>
+              <div className="flex items-center gap-2">
+                <div className="relative h-8 w-8">
+                  <div className="dark:hidden">
+                    <Image src="/icon_light.png" alt="Logo" width={32} height={32} />
+                  </div>
+                  <div className="hidden dark:block">
+                    <Image src="/icon_dark.png" alt="Logo" width={32} height={32} />
+                  </div>
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Super Admin</h2>
+              </div>
               <button onClick={() => setMobileNavOpen(false)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
                 <X className="h-6 w-6" />
               </button>

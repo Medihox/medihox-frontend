@@ -4,6 +4,7 @@ import { Menu, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -24,9 +25,19 @@ const MobileMenu = ({ isOpen, setIsOpen, scrollToEnquiry }: MobileMenuProps) => 
           e.preventDefault();
           setIsOpen(false);
           window.scrollTo({ top: 0, behavior: 'smooth' });
-        }} className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-full bg-primary"></div>
-          <span className="font-bold text-xl">MedClinic</span>
+        }} className="flex items-center gap-2 group">
+          <div className="relative h-10 w-10 transition-transform duration-300 group-hover:scale-105">
+            <div className="dark:hidden">
+              <Image src="/icon_light.png" alt="Logo" width={40} height={40} className="drop-shadow-sm" />
+            </div>
+            <div className="hidden dark:block">
+              <Image src="/icon_dark.png" alt="Logo" width={40} height={40} className="drop-shadow-sm" />
+            </div>
+          </div>
+          <div className="flex flex-col">
+            <span className="font-bold text-xl transition-colors duration-300 group-hover:text-primary">MEDI HOX</span>
+            <span className="text-[8px] tracking-widest font-medium text-muted-foreground">◆ LEAD-BOOSTER ◆</span>
+          </div>
         </Link>
         <Button 
           variant="ghost" 

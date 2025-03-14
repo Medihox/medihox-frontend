@@ -20,7 +20,7 @@ import {
   Paintbrush,
   CheckCircle
 } from "lucide-react";
-import { FaClinicMedical } from "react-icons/fa";
+import Image from "next/image";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { logout } from "@/lib/redux/slices/authSlice";
 import toast from "react-hot-toast";
@@ -98,8 +98,15 @@ export function Sidebar() {
           )}
         >
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-800">
-            <div className="flex gap-2">
-              <FaClinicMedical className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+            <div className="flex gap-2 items-center">
+              <div className="relative h-8 w-8">
+                <div className="dark:hidden">
+                  <Image src="/icon_light.png" alt="Logo" width={32} height={32} />
+                </div>
+                <div className="hidden dark:block">
+                  <Image src="/icon_dark.png" alt="Logo" width={32} height={32} />
+                </div>
+              </div>
               {!collapsed && (
                 profileLoading ? (
                   <Skeleton className="h-6 w-32" />
@@ -167,9 +174,19 @@ export function Sidebar() {
             className="fixed top-0 right-0 h-screen w-64 bg-white dark:bg-gray-900 shadow-lg border-l z-50 flex flex-col"
           >
             <div className="p-4 flex justify-between items-center border-b border-gray-200 dark:border-gray-800">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white truncate">
-                {profileLoading ? <Skeleton className="h-6 w-32" /> : userName}
-              </h2>
+              <div className="flex items-center gap-2">
+                <div className="relative h-8 w-8">
+                  <div className="dark:hidden">
+                    <Image src="/icon_light.png" alt="Logo" width={32} height={32} />
+                  </div>
+                  <div className="hidden dark:block">
+                    <Image src="/icon_dark.png" alt="Logo" width={32} height={32} />
+                  </div>
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white truncate">
+                  {profileLoading ? <Skeleton className="h-6 w-32" /> : userName}
+                </h2>
+              </div>
               <button onClick={() => setMobileNavOpen(false)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
                 <X className="h-6 w-6" />
               </button>
