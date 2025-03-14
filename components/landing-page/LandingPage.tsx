@@ -528,7 +528,7 @@ export default function LandingPage() {
               </div>
               
               <h1 className="text-3xl font-bold tracking-tight mb-4 text-center">
-                #1 Medical <span className="from-green-500 to-lime-500 bg-gradient-to-r text-transparent bg-clip-text">Lead Management</span> in {displayLocation}
+                #1 Medical <span className="from-purple-700 to-teal-500 bg-gradient-to-r text-transparent bg-clip-text">Lead Management</span> in {displayLocation}
               </h1>
               <p className="text-base text-muted-foreground mb-6 text-center">
                 Trusted by leading hospitals & clinics in {displayLocation} to capture, track, and convert patient leads.
