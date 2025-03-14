@@ -1632,7 +1632,7 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <div className="flex flex-col">
-                  <span className="font-bold text-xl md:text-2xl">MEDi HOX</span>
+                  <span className="font-bold text-xl md:text-2xl">MEDI HOX</span>
                   <span className="text-[10px] tracking-widest font-medium text-muted-foreground">◆ LEAD-BOOSTER ◆</span>
                 </div>
               </Link>
