@@ -12,7 +12,7 @@ export default function PatientsPage() {
   const [isNewPatientOpen, setIsNewPatientOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [timeRange, setTimeRange] = useState<FilterTimeRange>("all");
-  const [statusFilter, setStatusFilter] = useState<PatientStatus>("CONVERTED");
+  const [statusFilter, setStatusFilter] = useState<PatientStatus>("all");
   const [showFilters, setShowFilters] = useState(false);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MoreVertical, Pencil, Trash2, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -55,6 +55,8 @@ interface InquiryListProps {
   fromDate?: string;
   toDate?: string;
   onEdit: (inquiry: Inquiry) => void;
+  shouldRefetch?: boolean;
+  onRefetchComplete?: () => void;
 }
 
 const getStatusColor = (status: string) => {
@@ -125,7 +127,9 @@ export function InquiryList({
   statusFilter,
   fromDate,
   toDate,
-  onEdit
+  onEdit,
+  shouldRefetch,
+  onRefetchComplete
 }: InquiryListProps) {
   const router = useRouter();
   const [selectedInquiry, setSelectedInquiry] = useState<string | null>(null);
@@ -173,7 +177,15 @@ export function InquiryList({
   }, [searchQuery, timeRange, statusFilter, fromDate, toDate, page, pageSize]);
 
   // Fetch inquiries from API using the dedicated inquiries endpoint
-  const { data, isLoading, error } = useGetInquiriesQuery(filters);
+  const { data, isLoading, error, refetch } = useGetInquiriesQuery(filters);
+
+  // Handle refetch when shouldRefetch is true
+  useEffect(() => {
+    if (shouldRefetch) {
+      refetch();
+      onRefetchComplete?.();
+    }
+  }, [shouldRefetch, refetch, onRefetchComplete]);
 
   // Extract inquiries safely from the response
   const inquiriesData = React.useMemo(() => {

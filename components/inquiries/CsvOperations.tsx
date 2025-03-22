@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { useGetInquiriesQuery, useCreateAppointmentMutation } from "@/lib/redux/services/appointmentApi";
+import { useGetInquiriesQuery, useCreateAppointmentMutation, CreateAppointmentRequest } from "@/lib/redux/services/appointmentApi";
 import { Button } from "@/components/ui/button";
 import { Upload, Download, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -20,10 +20,17 @@ import Papa from 'papaparse';
 
 // Sample CSV template - using string literal to avoid TS issues
 const CSV_TEMPLATE = "patientName,patientEmail,patientPhone,treatment,status,source,date,notes\n" + 
-"John Doe,john@example.com,1234567890,General Checkup,ENQUIRY,WEBSITE,2023-12-31,Initial inquiry\n" +
-"Jane Smith,jane@example.com,9876543210,Dental Care,ENQUIRY,DIRECT_CALL,2023-12-30,Looking for price information\n";
+"John Doe,john@example.com,9998887771,General Checkup,Enquiry,WEBSITE,2023-12-31,Initial inquiry about consultation\n" +
+"Jane Smith,jane@example.com,9876543210,Dental Care,Enquiry,DIRECT_CALL,2023-12-30,Looking for price information\n" +
+"Robert Johnson,robert@example.com,7776665554,Skin Treatment,Enquiry,INSTAGRAM,2023-12-29,Interested in dermatology services\n" +
+"Sarah Williams,sarah@example.com,8889994443,Hair Transplant,Enquiry,FACEBOOK,2023-12-28,Requested detailed information on procedure\n" +
+"Michael Brown,michael@example.com,9990001112,Weight Loss Program,Follow Up,REFERRAL,2023-12-27,Following up on previous conversation\n";
 
-export function CsvOperations() {
+interface CsvOperationsProps {
+  onSuccess?: () => void;
+}
+
+export function CsvOperations({ onSuccess }: CsvOperationsProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -98,67 +105,81 @@ export function CsvOperations() {
         skipEmptyLines: true,
         complete: async (results) => {
           const { data, errors } = results;
-          let successCount = 0;
-          let failedCount = 0;
-          const errorMessages: string[] = [];
+          const validRecords: CreateAppointmentRequest[] = [];
+          const invalidRecords: any[] = [];
           
           // Process each row
           for (const row of data as any[]) {
             try {
               // Validate required fields
               if (!row.patientName || !row.patientEmail || !row.patientPhone) {
-                failedCount++;
+                invalidRecords.push(row);
                 continue;
               }
               
-              // Create inquiry data
-              const inquiryData: {
-                patient: {
-                  name: string;
-                  email: string;
-                  phoneNumber: string;
-                };
-                service: string;
-                status: string;
-                source: string;
-                date: string;
-                notes?: string;
-              } = {
+              // Create inquiry data with proper typing
+              const inquiryData: CreateAppointmentRequest = {
                 patient: {
                   name: row.patientName,
                   email: row.patientEmail,
                   phoneNumber: row.patientPhone
                 },
                 service: row.treatment || row.service || "General Inquiry",
-                status: row.status || "ENQUIRY",
+                status: row.status || "Enquiry",
                 source: row.source || "WEBSITE",
                 date: row.date ? row.date : new Date().toISOString().split('T')[0],
                 notes: row.notes || ""
               };
               
-              // Call API to create inquiry
-              await createInquiry(inquiryData).unwrap();
-              successCount++;
+              validRecords.push(inquiryData);
             } catch (error) {
-              failedCount++;
+              invalidRecords.push(row);
             }
           }
           
-          // Show results
-          setUploadResults({
-            success: successCount,
-            failed: failedCount,
-            errors: failedCount > 0 ? ["Some records could not be imported. Please check your CSV format and try again."] : []
-          });
+          // If we have valid records, send them in bulk
+          if (validRecords.length > 0) {
+            try {
+              // Send all valid records in a single API call
+              await createInquiry(validRecords).unwrap();
+              
+              // Show results
+              setUploadResults({
+                success: validRecords.length,
+                failed: invalidRecords.length,
+                errors: invalidRecords.length > 0 
+                  ? [`${invalidRecords.length} records could not be imported. Please check your CSV format and try again.`] 
+                  : []
+              });
+              
+              if (validRecords.length > 0) {
+                toast.success(`Successfully created ${validRecords.length} inquiries`);
+                // Call onSuccess callback to trigger refetch
+                onSuccess?.();
+              }
+              
+              if (invalidRecords.length > 0) {
+                toast.error(`${invalidRecords.length} records could not be imported. Please check your CSV format and try again.`);
+              }
+            } catch (error) {
+              console.error("Error creating bulk inquiries:", error);
+              toast.error(getErrorMessage(error) || "Failed to create inquiries");
+              setUploadResults({
+                success: 0,
+                failed: validRecords.length + invalidRecords.length,
+                errors: [getErrorMessage(error) || "Failed to create inquiries"]
+              });
+            }
+          } else {
+            setUploadResults({
+              success: 0,
+              failed: invalidRecords.length,
+              errors: ["No valid records found in the CSV file"]
+            });
+            toast.error("No valid records found in the CSV file");
+          }
+          
           setShowUploadResults(true);
-          
-          if (successCount > 0) {
-            toast.success(`Successfully created ${successCount} inquiries`);
-          }
-          
-          if (failedCount > 0) {
-            toast.error("Some records could not be imported. Please check your CSV format and try again.");
-          }
           
           // Reset file input
           if (fileInputRef.current) {
@@ -227,14 +248,27 @@ export function CsvOperations() {
                   onChange={handleFileChange}
                   className="hidden"
                   id="csv-upload"
+                  disabled={isUploading}
                 />
                 <label
                   htmlFor="csv-upload"
-                  className="cursor-pointer flex flex-col items-center justify-center"
+                  className={`cursor-pointer flex flex-col items-center justify-center ${
+                    isUploading ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                 >
-                  <Upload className="h-8 w-8 mb-2 text-gray-400" />
-                  <span className="text-sm font-medium">Click to upload CSV</span>
-                  <span className="text-xs text-gray-500 mt-1">or drag and drop</span>
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="h-8 w-8 mb-2 text-purple-600 animate-spin" />
+                      <span className="text-sm font-medium text-purple-600">Processing CSV...</span>
+                      <span className="text-xs text-gray-500 mt-1">Please wait</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-8 w-8 mb-2 text-gray-400" />
+                      <span className="text-sm font-medium">Click to upload CSV</span>
+                      <span className="text-xs text-gray-500 mt-1">or drag and drop</span>
+                    </>
+                  )}
                 </label>
               </div>
               

@@ -138,7 +138,7 @@ const getStatusColor = (status: string) => {
     return "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400 border-red-200 dark:border-red-500/20";
   }
   
-  if (statusLower.includes('enquir') || statusLower.includes('inquiry') || statusLower.includes('enquiry')) {
+  if (statusLower.includes('enquiry') || statusLower.includes('inquiry') || statusLower.includes('enquiry')) {
     return "bg-yellow-50 text-yellow-600 dark:bg-yellow-500/10 dark:text-yellow-400 border-yellow-200 dark:border-yellow-500/20";
   }
   
@@ -146,7 +146,7 @@ const getStatusColor = (status: string) => {
     return "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400 border-amber-200 dark:border-amber-500/20";
   }
   
-  if (statusLower.includes('schedul') || statusLower.includes('book') || statusLower.includes('confirm')) {
+  if (statusLower.includes('scheduled') || statusLower.includes('booked') || statusLower.includes('confirmed')) {
     return "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400 border-blue-200 dark:border-blue-500/20";
   }
   

@@ -44,6 +44,7 @@ export default function InquiriesPage() {
   const [statusFilter, setStatusFilter] = useState<InquiryStatus>("all");
   const [availableStatuses, setAvailableStatuses] = useState<string[]>([]);
   const [inquiryToEdit, setInquiryToEdit] = useState<Inquiry | undefined>(undefined);
+  const [shouldRefetch, setShouldRefetch] = useState(false);
   
   // Add date range state variables
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
@@ -106,6 +107,11 @@ export default function InquiriesPage() {
     setIsNewInquiryOpen(true);
   };
 
+  const handleInquiryCreated = () => {
+    setShouldRefetch(true);
+    setIsNewInquiryOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors">      
       <div className="p-8">
@@ -115,7 +121,7 @@ export default function InquiriesPage() {
             <p className="text-sm text-gray-500 dark:text-gray-400">Manage and track all inquiries</p>
           </div>
           <div className="flex gap-2">
-            <CsvOperations />
+            <CsvOperations onSuccess={handleInquiryCreated} />
             <button 
               onClick={handleCreateInquiry}
               className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
@@ -247,24 +253,27 @@ export default function InquiriesPage() {
             fromDate={formattedStartDate}
             toDate={formattedEndDate}
             onEdit={handleEditInquiry}
+            shouldRefetch={shouldRefetch}
+            onRefetchComplete={() => setShouldRefetch(false)}
+          />
+
+          {/* New Inquiry Dialog */}
+          <InquiryDialog
+            open={isNewInquiryOpen}
+            onOpenChange={setIsNewInquiryOpen}
+            onSuccess={handleInquiryCreated}
+          />
+
+          {/* Edit Inquiry Dialog */}
+          <InquiryDialog
+            open={isEditDialogOpen}
+            onOpenChange={setIsEditDialogOpen}
+            initialData={inquiryToEdit}
+            inquiryId={inquiryToEdit?.id}
+            onSuccess={handleInquiryCreated}
           />
         </div>
       </div>
-
-      {/* Dialog for creating new inquiries */}
-      <InquiryDialog 
-        open={isNewInquiryOpen}
-        onOpenChange={setIsNewInquiryOpen}
-        initialData={undefined}
-      />
-
-      {/* Dialog for editing existing inquiries */}
-      <InquiryDialog 
-        open={isEditDialogOpen}
-        onOpenChange={setIsEditDialogOpen}
-        initialData={inquiryToEdit}
-        inquiryId={inquiryToEdit?.id}
-      />
     </div>
   );
 }

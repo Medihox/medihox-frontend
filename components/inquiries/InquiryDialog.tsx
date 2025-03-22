@@ -28,6 +28,7 @@ interface InquiryDialogProps {
   onOpenChange: (open: boolean) => void;
   initialData?: any;
   inquiryId?: string;
+  onSuccess?: () => void;
 }
 
 interface Inquiry {
@@ -52,7 +53,8 @@ export function InquiryDialog({
   open, 
   onOpenChange,
   initialData,
-  inquiryId
+  inquiryId,
+  onSuccess
 }: InquiryDialogProps) {
   // Fetch services and status options from API
   const { data: services, isLoading: isLoadingServices } = useGetAllServicesQuery();
@@ -323,7 +325,7 @@ export function InquiryDialog({
         updateData.date = new Date().toISOString();
       }
       
-      // Handle image uploads for CONVERTED status
+      // Handle before and after images for converted status
       if (isConvertedStatus) {
         // Only update before images if they were modified and there are images
         if (modifiedFields.has('beforeImages') && formData.beforeImages.length > 0) {
@@ -375,7 +377,7 @@ export function InquiryDialog({
         }
       }
       
-      // Create or update based on whether we have an ID
+      // Handle the API call based on whether we're creating or updating
       if (inquiryId) {
         await updateInquiry({
           id: inquiryId,
@@ -400,6 +402,7 @@ export function InquiryDialog({
         toast.success("Inquiry created successfully");
       }
       
+      onSuccess?.();
       onOpenChange(false);
     } catch (error) {
       toast.error(getErrorMessage(error) || "Failed to save inquiry");

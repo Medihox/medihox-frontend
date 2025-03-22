@@ -65,6 +65,11 @@ export interface CreateAppointmentRequest {
   afterImages?: string[];
 }
 
+export interface BulkCreateAppointmentRequest {
+  data: CreateAppointmentRequest[];
+  isBulk: true;
+}
+
 export interface UpdateAppointmentRequest {
   patientId?: string;
   status?: string;
@@ -219,11 +224,11 @@ export const appointmentApi = createApi({
       providesTags: (_result, _error, id) => [{ type: 'Appointment', id }],
     }),
     
-    createAppointment: builder.mutation<Appointment, CreateAppointmentRequest>({
-      query: (appointment) => ({
+    createAppointment: builder.mutation<Appointment | Appointment[], CreateAppointmentRequest | CreateAppointmentRequest[]>({
+      query: (request) => ({
         url: 'appointments',
         method: 'POST',
-        body: appointment,
+        body: request,
       }),
       invalidatesTags: [{ type: 'Appointment', id: 'LIST' }],
     }),
