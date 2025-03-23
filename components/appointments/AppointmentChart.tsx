@@ -1,6 +1,6 @@
 "use client";
 
-import { Card } from "@/components/ui/card"
+import { Card } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useTheme } from "next-themes"
 
