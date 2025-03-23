@@ -144,7 +144,7 @@ export default function AdminDashboard() {
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="mb-6">
           <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Dashboard</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Welcome to MediCare Plus</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Welcome to MediHox</p>
         </div>
 
         {/* Stats Cards with Skeleton Loading */}

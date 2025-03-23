@@ -86,7 +86,7 @@ export default function ConvertedPage() {
   };
   
   return (
-    <div className="h-full flex-1 flex flex-col space-y-4 p-8">
+    <div className="space-y-4 p-8 h-[calc(100vh-4rem)] overflow-y-auto">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Converted Records</h2>
@@ -207,7 +207,7 @@ export default function ConvertedPage() {
         )}
       </div>
       
-      <div className="flex-1 bg-white dark:bg-gray-950 border rounded-md overflow-hidden">
+      <div className="bg-white dark:bg-gray-950 border rounded-md">
         <ConvertedList
           searchQuery={searchQuery}
           timeRange={timeRange}

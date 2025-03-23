@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Download, FileText, MoreVertical, Pencil, Trash2, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Download, FileText, MoreVertical, Pencil, Trash2, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,6 +49,7 @@ export function PatientsList({ searchQuery, timeRange, statusFilter }: PatientsL
   const router = useRouter();
   const [page, setPage] = useState(1);
   const pageSize = 10;
+  const [isPageLoading, setIsPageLoading] = useState(false);
 
   // Query patients with filtering
   const { data, isLoading, isFetching, error } = useGetPatientsQuery({
@@ -58,6 +59,11 @@ export function PatientsList({ searchQuery, timeRange, statusFilter }: PatientsL
     timeRange,
     status: statusFilter
   });
+
+  // Set loading state when fetching new page
+  useEffect(() => {
+    setIsPageLoading(isFetching);
+  }, [isFetching]);
 
   const [deletePatient, { isLoading: isDeleting }] = useDeletePatientMutation();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -301,6 +307,18 @@ export function PatientsList({ searchQuery, timeRange, statusFilter }: PatientsL
   return (
     <>
       <div className="overflow-x-auto">
+        <div className="px-4 py-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
+          <div className="text-sm font-medium">
+            Total: <span className="text-purple-600 dark:text-purple-400">{data?.pagination.totalItems || 0}</span> patients
+          </div>
+          <Button
+            onClick={handleExportCSV}
+            className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          >
+            <Download className="h-4 w-4" />
+            Export CSV
+          </Button>
+        </div>
         <table className="w-full table-auto">
           <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>
@@ -397,41 +415,66 @@ export function PatientsList({ searchQuery, timeRange, statusFilter }: PatientsL
           </tbody>
         </table>
 
-        <div className="p-4 border-t border-gray-200 dark:border-gray-800">
-          <div className="flex items-center justify-between">
+        {!isLoading && data?.data && data.data.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+            <FileText className="h-12 w-12 text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">No patients found</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              {searchQuery ? `No results for "${searchQuery}"` : "There are no patients matching your filters."}
+            </p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => {
+                setPage(1);
+              }}
+            >
+              Reset filters
+            </Button>
+          </div>
+        )}
+        
+        {!isLoading && data?.data && data.data.length > 0 && (
+          <div className="flex justify-between items-center mt-6 px-4 py-3 border-t border-gray-200 dark:border-gray-800">
             <div className="text-sm text-gray-500 dark:text-gray-400">
-              Showing {data?.data.length || 0} of {data?.pagination.totalItems || 0} patients
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={!data?.pagination.hasPreviousPage}
-                onClick={() => setPage(prev => Math.max(1, prev - 1))}
-              >
-                Previous
-              </Button>
-              <span className="text-sm text-gray-600 dark:text-gray-300">
-                Page {data?.pagination.currentPage || 1} of {data?.pagination.totalPages || 1}
+              Showing <span className="font-medium">{data?.data.length}</span> of <span className="font-medium">{data?.pagination.totalItems}</span> patients
+              <span className="hidden sm:inline-block ml-1">
+                (Page <span className="font-medium">{data?.pagination.currentPage}</span> of <span className="font-medium">{data?.pagination.totalPages}</span>)
               </span>
+            </div>
+            <div className="flex space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                disabled={page <= 1 || isPageLoading}
+                onClick={() => setPage(prev => Math.max(1, prev - 1))}
+                className="flex items-center px-3"
+              >
+                {isPageLoading ? (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                )}
+                <span>Previous</span>
+              </Button>
+              
               <Button
                 variant="outline"
                 size="sm"
-                disabled={!data?.pagination.hasNextPage}
+                disabled={page >= (data?.pagination.totalPages || 1) || isPageLoading}
                 onClick={() => setPage(prev => prev + 1)}
+                className="flex items-center px-3"
               >
-                Next
-              </Button>
-              <Button
-                onClick={handleExportCSV}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-              >
-                <Download className="h-4 w-4" />
-                Export CSV
+                <span>Next</span>
+                {isPageLoading ? (
+                  <Loader2 className="h-4 w-4 ml-1 animate-spin" />
+                ) : (
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                )}
               </Button>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

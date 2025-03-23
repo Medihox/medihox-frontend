@@ -178,6 +178,11 @@ export function InquiryList({
 
   // Fetch inquiries from API using the dedicated inquiries endpoint
   const { data, isLoading, error, refetch } = useGetInquiriesQuery(filters);
+  
+  // Reset to page 1 when any filter changes except page number
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, timeRange, statusFilter, fromDate, toDate]);
 
   // Handle refetch when shouldRefetch is true
   useEffect(() => {
@@ -239,13 +244,13 @@ export function InquiryList({
 
   // Handle page navigation
   const goToNextPage = () => {
-    if (pagination.hasNextPage) {
+    if (pagination.currentPage < pagination.totalPages) {
       setPage(prev => prev + 1);
     }
   };
 
   const goToPreviousPage = () => {
-    if (pagination.hasPreviousPage) {
+    if (pagination.currentPage > 1) {
       setPage(prev => Math.max(1, prev - 1));
     }
   };
@@ -491,26 +496,34 @@ export function InquiryList({
       
       {/* Pagination controls */}
       {!isLoading && inquiriesData.length > 0 && (
-        <div className="flex justify-end mt-4">
+        <div className="flex justify-between items-center mt-6 px-4 py-3 border-t border-gray-200 dark:border-gray-800">
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            Showing <span className="font-medium">{inquiriesData.length}</span> of <span className="font-medium">{pagination.totalItems}</span> inquiries
+            <span className="hidden sm:inline-block ml-1">
+              (Page <span className="font-medium">{pagination.currentPage}</span> of <span className="font-medium">{pagination.totalPages}</span>)
+            </span>
+          </div>
           <div className="flex space-x-2">
             <Button 
               variant="outline" 
               size="sm"
-              disabled={!pagination.hasPreviousPage}
+              disabled={pagination.currentPage <= 1}
               onClick={goToPreviousPage}
+              className="flex items-center px-3"
             >
-              <ChevronLeft className="h-4 w-4" />
-              Previous
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              <span>Previous</span>
             </Button>
             
             <Button
               variant="outline"
               size="sm"
-              disabled={!pagination.hasNextPage}
+              disabled={pagination.currentPage >= pagination.totalPages}
               onClick={goToNextPage}
+              className="flex items-center px-3"
             >
-              Next
-              <ChevronRight className="h-4 w-4" />
+              <span>Next</span>
+              <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           </div>
         </div>

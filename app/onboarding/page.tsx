@@ -40,14 +40,37 @@ export default function OnboardingPage() {
     otp: string; 
     password: string;
     secretKey: string;
+    organizationLogo?: File;
   }) => {
     setIsSubmitting(true)
     try {
-      // Only pass the required fields to the API
-      await completeOnboarding({
+      // Create the API request object with required fields
+      const requestData: any = {
         email: data.email,
         organizationName: data.organizationName
-      }).unwrap();
+      };
+      
+      // Process organization logo if available
+      if (data.organizationLogo) {
+        try {
+          // Convert logo to base64 string with proper format
+          const base64Logo = await convertFileToBase64(data.organizationLogo);
+          
+          // Ensure the base64 string starts with 'data:image' as expected by backend
+          if (base64Logo && base64Logo.startsWith('data:image')) {
+            requestData.organizationLogo = base64Logo;
+          } else {
+            console.error("Invalid image format:", base64Logo?.substring(0, 30) + "...");
+          }
+        } catch (error) {
+          console.error("Error converting logo to base64:", error);
+          // Continue without logo on error, backend will use default
+        }
+      }
+      
+      // Submit to API
+      const response = await completeOnboarding(requestData).unwrap();
+      console.log("Onboarding successful:", response);
       
       // Update redux state
       dispatch(setOnboardingCompleted())
@@ -67,6 +90,16 @@ export default function OnboardingPage() {
       showErrorToast(errorMessage);
       console.error("Onboarding Error:", error);
     }
+  }
+  
+  // Helper function to convert File to base64 string
+  const convertFileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
   }
 
   return (

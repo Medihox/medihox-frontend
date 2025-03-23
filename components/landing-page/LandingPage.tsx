@@ -66,7 +66,7 @@ export default function LandingPage() {
           stars: 5
         }
       ],
-      partners: ['Apollo Hospitals', 'Max Healthcare', 'Fortis', 'City Hospital', 'MediCare Centers'],
+      partners: ['Apollo Hospitals', 'Max Healthcare', 'Fortis', 'City Hospital', 'MediHox Centers'],
       regionBenefits: [
         "Compliant with Indian healthcare regulations", 
         "Built-in Aadhaar verification", 

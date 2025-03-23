@@ -260,6 +260,11 @@ export function AppointmentsList({
     hasPreviousPage: false
   };
 
+  // Reset to page 1 when any filter changes except page number
+  React.useEffect(() => {
+    setPage(1);
+  }, [searchQuery, timeRange, statusFilter, fromDate, toDate, showOnlyEnquiries]);
+
   const handleSelectAppointment = (id: string) => {
     setSelectedAppointments(prev => 
       prev.includes(id) 
@@ -427,6 +432,18 @@ export function AppointmentsList({
   return (
     <>
       <div className="overflow-x-auto">
+        <div className="px-4 py-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
+          <div className="text-sm font-medium">
+            Total: <span className="text-purple-600 dark:text-purple-400">{pagination.totalItems}</span> appointments
+          </div>
+          <button 
+            onClick={handleExportExcel}
+            className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          >
+            <Download className="h-4 w-4" />
+            Export Excel
+          </button>
+        </div>
         <Table>
           <TableHeader>
             <TableRow>
@@ -589,32 +606,13 @@ export function AppointmentsList({
           </TableBody>
         </Table>
         
-        <div className="p-4 border-t border-gray-200 dark:border-gray-800">
-          <div className="flex items-center justify-between">
+        {selectedAppointments.length > 0 && (
+          <div className="p-4 border-t border-gray-200 dark:border-gray-800">
             <div className="text-sm text-gray-500 dark:text-gray-400">
-              {selectedAppointments.length > 0 
-                ? `Selected ${selectedAppointments.length} of ${pagination.totalItems} appointments`
-                : `Showing ${pagination.currentPage === 1 ? 1 : (pagination.currentPage - 1) * pagination.pageSize + 1} to ${Math.min(pagination.currentPage * pagination.pageSize, pagination.totalItems)} of ${pagination.totalItems} appointments`
-              }
-            </div>
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={handleExportExcel}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-              >
-                <Download className="h-4 w-4" />
-                Export Excel
-              </button>
-              <button 
-                onClick={handleExportPDF}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-              >
-                <FileText className="h-4 w-4" />
-                Export PDF
-              </button>
+              Selected {selectedAppointments.length} of {pagination.totalItems} appointments
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       <AppointmentDialog
@@ -653,29 +651,40 @@ export function AppointmentsList({
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="flex justify-end mt-4">
-        <div className="flex space-x-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            disabled={!pagination.hasPreviousPage}
-            onClick={() => setPage(prev => Math.max(1, prev - 1))}
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Previous
-          </Button>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={!pagination.hasNextPage}
-            onClick={() => setPage(prev => prev + 1)}
-          >
-            Next
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+      {/* Pagination controls */}
+      {!isLoading && filteredAppointments.length > 0 && (
+        <div className="flex justify-between items-center mt-6 px-4 py-3 border-t border-gray-200 dark:border-gray-800">
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            Showing <span className="font-medium">{filteredAppointments.length}</span> of <span className="font-medium">{pagination.totalItems}</span> appointments
+            <span className="hidden sm:inline-block ml-1">
+              (Page <span className="font-medium">{pagination.currentPage}</span> of <span className="font-medium">{pagination.totalPages}</span>)
+            </span>
+          </div>
+          <div className="flex space-x-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              disabled={pagination.currentPage <= 1}
+              onClick={() => setPage(prev => Math.max(1, prev - 1))}
+              className="flex items-center px-3"
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              <span>Previous</span>
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={pagination.currentPage >= pagination.totalPages}
+              onClick={() => setPage(prev => prev + 1)}
+              className="flex items-center px-3"
+            >
+              <span>Next</span>
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
     </>
   );
 }

@@ -81,12 +81,13 @@ export function ConvertedList({
   const [currentPage, setCurrentPage] = useState(1);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedConvertedId, setSelectedConvertedId] = useState<string | null>(null);
+  const [isPageLoading, setIsPageLoading] = useState(false);
   
   // Ensure we're always filtering for converted status
   const finalStatusFilter = statusFilter === 'all' ? 'CONVERTED' : statusFilter;
   
   // Get converted appointments with filters
-  const { data, isLoading, error, refetch } = useGetAppointmentsQuery({
+  const { data, isLoading, isFetching, error, refetch } = useGetAppointmentsQuery({
     search: searchQuery,
     timeRange,
     status: finalStatusFilter, // Use our ensured filter
@@ -112,6 +113,11 @@ export function ConvertedList({
   useEffect(() => {
     refetch();
   }, [currentPage, refetch]);
+  
+  // Set loading state when fetching new page
+  useEffect(() => {
+    setIsPageLoading(isFetching);
+  }, [isFetching]);
   
   // Handle pagination navigation
   const goToPage = (page: number) => {
@@ -227,19 +233,47 @@ export function ConvertedList({
   // Render error state
   if (error) {
     return (
-      <div className="p-8 text-center">
-        <AlertCircle className="h-10 w-10 text-red-500 mx-auto mb-4" />
-        <h3 className="text-lg font-medium">Error loading data</h3>
-        <p className="text-sm text-gray-500 mt-2">
-          There was a problem fetching the converted records. Please try again.
-        </p>
-        <Button 
-          onClick={() => refetch()} 
-          variant="outline" 
-          className="mt-4"
-        >
-          Retry
-        </Button>
+      <div className="flex flex-col">
+        <div className="p-8 text-center">
+          <AlertCircle className="h-10 w-10 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-medium">Error loading data</h3>
+          <p className="text-sm text-gray-500 mt-2">
+            There was a problem fetching the converted records. Please try again.
+          </p>
+          <Button 
+            onClick={() => refetch()} 
+            variant="outline" 
+            className="mt-4"
+          >
+            Retry
+          </Button>
+        </div>
+        
+        {/* Add export buttons at the bottom */}
+        <div className="flex justify-end mt-4 px-4 py-3 border-t border-gray-200 dark:border-gray-800">
+          <div className="flex items-center gap-2">
+            <Button 
+              onClick={handleExportExcel}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+              disabled
+            >
+              <Download className="h-4 w-4" />
+              Export Excel
+            </Button>
+            <Button
+              onClick={handleExportPDF}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+              disabled
+            >
+              <FileText className="h-4 w-4" />
+              Export PDF
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -247,15 +281,48 @@ export function ConvertedList({
   // Render empty state
   if (convertedItems.length === 0) {
     return (
-      <div className="p-8 text-center">
-        <CheckCircle className="h-10 w-10 text-gray-400 mx-auto mb-4" />
-        <h3 className="text-lg font-medium">No converted records found</h3>
-        <p className="text-sm text-gray-500 mt-2">
-          {searchQuery 
-            ? `No results match "${searchQuery}"`
-            : "There are no converted records matching your filters"
-          }
-        </p>
+      <div className="flex flex-col">
+        <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+          <FileText className="h-12 w-12 text-gray-400 mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">No converted records found</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            {searchQuery ? `No results for "${searchQuery}"` : "There are no converted records matching your filters."}
+          </p>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => {
+              setCurrentPage(1);
+              // Reset other filters if needed
+            }}
+          >
+            Reset filters
+          </Button>
+        </div>
+        
+        {/* Add export buttons at the bottom */}
+        <div className="flex justify-end mt-4 px-4 py-3 border-t border-gray-200 dark:border-gray-800">
+          <div className="flex items-center gap-2">
+            <Button 
+              onClick={handleExportExcel}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Export Excel
+            </Button>
+            <Button
+              onClick={handleExportPDF}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <FileText className="h-4 w-4" />
+              Export PDF
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -292,7 +359,7 @@ export function ConvertedList({
   };
   
   return (
-    <div>
+    <div className="flex flex-col">
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
@@ -457,75 +524,68 @@ export function ConvertedList({
         </Table>
       </div>
       
-      {/* Pagination controls */}
-      <div className="p-4 border-t border-gray-200 dark:border-gray-800">
-        <div className="flex items-center justify-between">
+      {/* Pagination controls - only shown when there are results */}
+      {!isLoading && convertedItems.length > 0 && (
+        <div className="flex justify-between items-center mt-6 px-4 py-3 border-t border-gray-200 dark:border-gray-800">
           <div className="text-sm text-gray-500 dark:text-gray-400">
-            Showing{" "}
-            <span className="font-medium text-gray-900 dark:text-gray-50">
-              {(currentPage - 1) * 10 + 1}
-            </span>{" "}
-            to{" "}
-            <span className="font-medium text-gray-900 dark:text-gray-50">
-              {Math.min(currentPage * 10, data?.pagination?.totalItems || 0)}
-            </span>{" "}
-            of{" "}
-            <span className="font-medium text-gray-900 dark:text-gray-50">
-              {data?.pagination?.totalItems || 0}
-            </span>{" "}
-            results
+            Showing <span className="font-medium">{convertedItems.length}</span> of <span className="font-medium">{data?.pagination?.totalItems || 0}</span> results
+            <span className="hidden sm:inline-block ml-1">
+              (Page <span className="font-medium">{currentPage}</span> of <span className="font-medium">{totalPages}</span>)
+            </span>
           </div>
-          
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 mr-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => goToPage(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-                <span className="sr-only">Previous page</span>
-              </Button>
-              
-              <div className="text-sm font-medium">
-                Page {currentPage} of {totalPages}
-              </div>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => goToPage(currentPage + 1)}
-                disabled={currentPage === totalPages}
-              >
-                <ChevronRight className="h-4 w-4" />
-                <span className="sr-only">Next page</span>
-              </Button>
-            </div>
+          <div className="flex items-center space-x-2">
+            <Button 
+              onClick={handleExportExcel}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2 mr-2"
+            >
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">Export Excel</span>
+              <span className="inline sm:hidden">Excel</span>
+            </Button>
+            <Button
+              onClick={handleExportPDF}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2 mr-2"
+            >
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline">Export PDF</span>
+              <span className="inline sm:hidden">PDF</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              disabled={currentPage <= 1 || isPageLoading}
+              onClick={() => goToPage(Math.max(1, currentPage - 1))}
+              className="flex items-center px-3"
+            >
+              {isPageLoading ? (
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              ) : (
+                <ChevronLeft className="h-4 w-4 mr-1" />
+              )}
+              <span>Previous</span>
+            </Button>
             
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={handleExportExcel}
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2"
-              >
-                <Download className="h-4 w-4" />
-                Export Excel
-              </Button>
-              <Button
-                onClick={handleExportPDF}
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2"
-              >
-                <FileText className="h-4 w-4" />
-                Export PDF
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage >= totalPages || isPageLoading}
+              onClick={() => goToPage(currentPage + 1)}
+              className="flex items-center px-3"
+            >
+              <span>Next</span>
+              {isPageLoading ? (
+                <Loader2 className="h-4 w-4 ml-1 animate-spin" />
+              ) : (
+                <ChevronRight className="h-4 w-4 ml-1" />
+              )}
+            </Button>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 } 
