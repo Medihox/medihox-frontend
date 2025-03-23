@@ -51,11 +51,6 @@ export function middleware(request: NextRequest) {
     }
   }
   
-  // Prevent authenticated users from accessing onboarding
-  if (pathname === "/onboarding" && isAuthenticated) {
-    return NextResponse.redirect(new URL("/admin/dashboard", request.url));
-  }
-  
   // Check if the auth cookie exists
   const authCookie = request.cookies.get('accessToken') || request.cookies.get('your_token_name');
   

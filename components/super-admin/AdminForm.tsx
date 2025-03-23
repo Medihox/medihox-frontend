@@ -12,7 +12,6 @@ interface AdminFormData {
   name: string;
   email: string;
   phone?: string;
-  organizationName?: string;
   role: "ADMIN";
   password?: string;
 }
@@ -36,7 +35,6 @@ export function AdminForm({
     name: initialData?.name || "",
     email: initialData?.email || "",
     phone: initialData?.phone || "",
-    organizationName: initialData?.organizationName || "",
     role: "ADMIN",
     password: "",
   });
@@ -48,7 +46,6 @@ export function AdminForm({
         name: initialData.name || "",
         email: initialData.email || "",
         phone: initialData.phone || "",
-        organizationName: initialData.organizationName || "",
         role: "ADMIN",
         password: "",
       });
@@ -92,16 +89,6 @@ export function AdminForm({
           placeholder="Enter phone number" 
           value={formData.phone}
           onChange={(e) => setFormData({...formData, phone: e.target.value})}
-        />
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="organizationName">Organization Name</Label>
-        <Input 
-          id="organizationName" 
-          placeholder="Enter organization name" 
-          value={formData.organizationName}
-          onChange={(e) => setFormData({...formData, organizationName: e.target.value})}
         />
       </div>
       

@@ -23,27 +23,15 @@ export default function OnboardingPage() {
   const accessToken = useAppSelector(state => state.auth.accessToken)
 
   useEffect(() => {
-    // If user is authenticated, redirect to dashboard
-    if (isAuthenticated || accessToken) {
-      showErrorToast("You are already logged in")
-      router.push("/admin/dashboard")
-      return
-    }
-    
-    // If onboarding is already completed, redirect to login
-    if (hasCompletedOnboarding) {
-      showInfoToast("You have already completed onboarding")
-      router.push("/login")
-      return
-    }
-    
-    // Otherwise, just show the onboarding page after loading
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 1500)
+    // Just show the onboarding page after loading
+    // Using a simple timeout isn't needed anymore since the LoadingScreen
+    // will handle its own duration and transition
+    if (!isLoading) return; // Skip if already loaded
+  }, [hasCompletedOnboarding, isAuthenticated, accessToken, router, isLoading])
 
-    return () => clearTimeout(timer)
-  }, [hasCompletedOnboarding, isAuthenticated, accessToken, router])
+  const handleLoadingComplete = () => {
+    setIsLoading(false);
+  }
 
   const handleOnboardingComplete = async (data: { 
     email: string;
@@ -75,13 +63,22 @@ export default function OnboardingPage() {
       }, 500)
     } catch (error) {
       setIsSubmitting(false)
-      showErrorToast(getErrorMessage(error) || "Onboarding failed. Please try again.")
+      const errorMessage = getErrorMessage(error);
+      showErrorToast(errorMessage);
+      console.error("Onboarding Error:", error);
     }
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA] dark:bg-gray-900 flex items-center justify-center p-4">
-      {isLoading ? <LoadingScreen /> : <OnboardingForm onComplete={handleOnboardingComplete} isSubmitting={isSubmitting} />}
+    <div className="min-h-screen bg-[#F5F7FA] dark:bg-gray-900 flex items-center justify-center px-2 py-4 sm:p-4">
+      {isLoading ? (
+        <LoadingScreen 
+          duration={2500} 
+          onLoadingComplete={handleLoadingComplete} 
+        />
+      ) : (
+        <OnboardingForm onComplete={handleOnboardingComplete} isSubmitting={isSubmitting} />
+      )}
     </div>
   )
 }
