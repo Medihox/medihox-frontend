@@ -17,18 +17,48 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Papa from 'papaparse';
+import { format, isValid, parse } from 'date-fns';
 
 // Sample CSV template - using string literal to avoid TS issues
 const CSV_TEMPLATE = "patientName,patientEmail,patientPhone,treatment,status,source,date,notes\n" + 
 "John Doe,john@example.com,9998887771,General Checkup,Enquiry,WEBSITE,2023-12-31,Initial inquiry about consultation\n" +
-"Jane Smith,jane@example.com,9876543210,Dental Care,Enquiry,DIRECT_CALL,2023-12-30,Looking for price information\n" +
+"Jane Smith,jane@example.com,9876543210,Dental Care,Treatment,DIRECT_CALL,2023-12-30,Looking for price information\n" +
 "Robert Johnson,robert@example.com,7776665554,Skin Treatment,Enquiry,INSTAGRAM,2023-12-29,Interested in dermatology services\n" +
-"Sarah Williams,sarah@example.com,8889994443,Hair Transplant,Enquiry,FACEBOOK,2023-12-28,Requested detailed information on procedure\n" +
+"Sarah Williams,sarah@example.com,8889994443,Hair Transplant,Converted,FACEBOOK,2023-12-28,Requested detailed information on procedure\n" +
 "Michael Brown,michael@example.com,9990001112,Weight Loss Program,Follow Up,REFERRAL,2023-12-27,Following up on previous conversation\n";
 
 interface CsvOperationsProps {
   onSuccess?: () => void;
 }
+
+// Function to ensure date is in ISO 8601 format (YYYY-MM-DD)
+const formatToISODate = (dateString: string): string => {
+  // If already in YYYY-MM-DD format, return as is
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    return dateString;
+  }
+  
+  // Try to parse common date formats
+  const formats = [
+    'MM/dd/yyyy', // 12/31/2023
+    'dd/MM/yyyy', // 31/12/2023
+    'MM-dd-yyyy', // 12-31-2023
+    'dd-MM-yyyy', // 31-12-2023
+    'yyyy/MM/dd', // 2023/12/31
+    'MMM dd, yyyy', // Dec 31, 2023
+    'MMMM dd, yyyy', // December 31, 2023
+  ];
+  
+  for (const formatStr of formats) {
+    const parsedDate = parse(dateString, formatStr, new Date());
+    if (isValid(parsedDate)) {
+      return format(parsedDate, 'yyyy-MM-dd');
+    }
+  }
+  
+  // Default to today if the date can't be parsed
+  return format(new Date(), 'yyyy-MM-dd');
+};
 
 export function CsvOperations({ onSuccess }: CsvOperationsProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -127,7 +157,7 @@ export function CsvOperations({ onSuccess }: CsvOperationsProps) {
                 service: row.treatment || row.service || "General Inquiry",
                 status: row.status || "Enquiry",
                 source: row.source || "WEBSITE",
-                date: row.date ? row.date : new Date().toISOString().split('T')[0],
+                date: row.date ? formatToISODate(row.date) : format(new Date(), 'yyyy-MM-dd'),
                 notes: row.notes || ""
               };
               
