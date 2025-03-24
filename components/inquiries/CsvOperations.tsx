@@ -141,8 +141,8 @@ export function CsvOperations({ onSuccess }: CsvOperationsProps) {
           // Process each row
           for (const row of data as any[]) {
             try {
-              // Validate required fields
-              if (!row.patientName || !row.patientEmail || !row.patientPhone) {
+              // Validate required fields - only name is required
+              if (!row.patientName) {
                 invalidRecords.push(row);
                 continue;
               }
@@ -151,8 +151,8 @@ export function CsvOperations({ onSuccess }: CsvOperationsProps) {
               const inquiryData: CreateAppointmentRequest = {
                 patient: {
                   name: row.patientName,
-                  email: row.patientEmail,
-                  phoneNumber: row.patientPhone
+                  email: row.patientEmail || "", // Allow empty email
+                  phoneNumber: row.patientPhone || "" // Allow empty phone number
                 },
                 service: row.treatment || row.service || "General Inquiry",
                 status: row.status || "Enquiry",

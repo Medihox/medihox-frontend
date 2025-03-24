@@ -45,7 +45,6 @@ export default function AppointmentsListPage() {
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState("");
   const [timeRange, setTimeRange] = useState<FilterTimeRange>("all");
-  const [statusFilter, setStatusFilter] = useState<AppointmentStatus>("APPOINTMENT");
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -58,25 +57,10 @@ export default function AppointmentsListPage() {
   // Fetch all statuses from the API
   const { data: statuses } = useGetAllStatusQuery();
   
-  // Filter for appointment-related statuses
+  // Store available statuses for possible future use
   useEffect(() => {
     if (statuses) {
-      const appointmentStatuses = statuses.filter(status => 
-        status.name.toLowerCase().includes('appointment') || 
-        status.name.toLowerCase().includes('scheduled') ||
-        status.name.toLowerCase().includes('confirmed') ||
-        status.name === "APPOINTMENT"
-      );
-      
-      // Set available statuses for filtering
-      setAvailableStatuses(appointmentStatuses.map(s => s.name));
-      
-      // Make sure APPOINTMENT status is available or use the first status
-      if (appointmentStatuses.length > 0) {
-        if (!appointmentStatuses.some(s => s.name === "APPOINTMENT")) {
-          setStatusFilter(appointmentStatuses[0].name);
-        }
-      }
+      setAvailableStatuses(statuses.map(s => s.name));
     }
   }, [statuses]);
 
@@ -260,7 +244,6 @@ export default function AppointmentsListPage() {
           <AppointmentsList 
             searchQuery={searchQuery}
             timeRange={timeRange}
-            statusFilter={statusFilter}
             fromDate={formattedStartDate}
             toDate={formattedEndDate}
             onEdit={handleEditAppointment}

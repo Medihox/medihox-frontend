@@ -118,7 +118,7 @@ const mockAppointments: Appointment[] = [
 interface AppointmentsListProps {
   searchQuery: string;
   timeRange: FilterTimeRange;
-  statusFilter: AppointmentStatus | "all";
+  statusFilter?: AppointmentStatus | "all";
   fromDate?: string;
   toDate?: string;
   showOnlyEnquiries?: boolean;
@@ -221,7 +221,8 @@ export function AppointmentsList({
     pageSize,
     search: searchQuery && searchQuery.trim() !== '' ? searchQuery.trim() : undefined,
     timeRange: timeRange !== 'all' ? timeRange : undefined,
-    status: statusFilter !== 'all' ? statusFilter : undefined,
+    // Always filter by Appointment status regardless of statusFilter prop
+    status: "APPOINTMENT",
     // Only include date parameters when they actually have values
     ...(fromDate && fromDate.trim() !== '' ? { fromDate } : {}),
     ...(toDate && toDate.trim() !== '' ? { toDate } : {}),
@@ -229,7 +230,7 @@ export function AppointmentsList({
   };
 
   // Add debugging to see what's being sent
-  console.log('Sending filters to API:', apiParams);
+  console.log('Sending to API with fixed APPOINTMENT status:', apiParams);
   
   const { data, isLoading, error } = useGetAppointmentsQuery(apiParams);
 
@@ -420,14 +421,7 @@ export function AppointmentsList({
   }
 
   // If you're filtering client-side, you can add additional filtering:
-  const filteredAppointments = showOnlyEnquiries 
-    ? appointmentsData.filter((appointment: Appointment) => 
-        appointment.status.toLowerCase().includes('enquiry') || 
-        appointment.status.toLowerCase().includes('followup') ||
-        appointment.status.toLowerCase().includes('cost') ||
-        appointment.status.toLowerCase().includes('issue')
-      )
-    : appointmentsData;
+  const filteredAppointments = appointmentsData;
 
   return (
     <>
