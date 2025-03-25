@@ -41,12 +41,8 @@ export function EditAdminDialog({
         email: formData.email,
         phone: formData.phone,
         organizationName: formData.organizationName,
+        status: formData.status,
       };
-
-      // Only include password if it was changed
-      if (formData.password) {
-        updateData.password = formData.password;
-      }
 
       await updateAdmin({ 
         id: adminData.id, 

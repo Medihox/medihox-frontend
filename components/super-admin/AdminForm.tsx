@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { AdminUser } from "@/lib/redux/services/superAdminApi";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface AdminFormData {
   id?: string;
@@ -14,6 +15,7 @@ interface AdminFormData {
   phone?: string;
   role: "ADMIN";
   password?: string;
+  status?: "ACTIVE" | "INACTIVE" | "DELETED";
 }
 
 interface AdminFormProps {
@@ -37,6 +39,7 @@ export function AdminForm({
     phone: initialData?.phone || "",
     role: "ADMIN",
     password: "",
+    status: (initialData?.status as "ACTIVE" | "INACTIVE" | "DELETED") || "ACTIVE",
   });
 
   useEffect(() => {
@@ -48,6 +51,7 @@ export function AdminForm({
         phone: initialData.phone || "",
         role: "ADMIN",
         password: "",
+        status: (initialData.status as "ACTIVE" | "INACTIVE" | "DELETED") || "ACTIVE",
       });
     }
   }, [initialData]);
@@ -91,21 +95,39 @@ export function AdminForm({
           onChange={(e) => setFormData({...formData, phone: e.target.value})}
         />
       </div>
-      
+
       <div className="space-y-2">
-        <Label htmlFor="password">
-          Password{isPasswordRequired ? '*' : ''} 
-          {!isPasswordRequired && <span className="text-xs">(Leave blank to keep current)</span>}
-        </Label>
-        <Input 
-          id="password" 
-          type="password"
-          placeholder="Enter password" 
-          value={formData.password}
-          onChange={(e) => setFormData({...formData, password: e.target.value})}
-          required={isPasswordRequired}
-        />
+        <Label htmlFor="status">Status</Label>
+        <Select
+          value={formData.status}
+          onValueChange={(value: "ACTIVE" | "INACTIVE" | "DELETED") => 
+            setFormData({...formData, status: value})
+          }
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ACTIVE">Active</SelectItem>
+            <SelectItem value="INACTIVE">Inactive</SelectItem>
+            <SelectItem value="DELETED">Deleted</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
+      
+      {isPasswordRequired && (
+        <div className="space-y-2">
+          <Label htmlFor="password">Password*</Label>
+          <Input 
+            id="password" 
+            type="password"
+            placeholder="Enter password" 
+            value={formData.password}
+            onChange={(e) => setFormData({...formData, password: e.target.value})}
+            required
+          />
+        </div>
+      )}
       
       <Button 
         type="submit"
