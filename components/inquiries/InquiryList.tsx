@@ -306,7 +306,7 @@ export function InquiryList({
             <TableHead>Service</TableHead>
             <TableHead className="text-center">Status</TableHead>
             <TableHead>Source</TableHead>
-            <TableHead>Created</TableHead>
+            <TableHead>Date</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -383,7 +383,7 @@ export function InquiryList({
                   </span>
                 </TableCell>
                 <TableCell>
-                  {formatDate(inquiry.createdAt)}
+                  {formatDate(inquiry.date)}
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end items-center space-x-2">
