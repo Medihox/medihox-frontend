@@ -63,15 +63,23 @@ export function Sidebar() {
     return () => window.removeEventListener("resize", checkScreenSize);
   }, []);
 
-  const handleLogout = () => {
-    dispatch(logout());
-    
-    document.cookie = "isAuthenticated=; path=/; max-age=0";
-    document.cookie = "userRole=; path=/; max-age=0";
-    
-    toast.success("Logged out successfully");
-    
-    router.push("/login");
+  const handleLogout = async () => {
+    try {
+      // Clear cookies first
+      document.cookie = "isAuthenticated=; path=/; max-age=0";
+      document.cookie = "userRole=; path=/; max-age=0";
+      
+      // Dispatch logout action
+      dispatch(logout());
+      
+      // Show success message
+      toast.success("Logged out successfully");
+      
+      // Force a hard navigation to login page
+      window.location.href = "/login";
+    } catch (error) {
+      toast.error("Error during logout");
+    }
   };
 
   // Helper function to check if current path is active for a menu item
