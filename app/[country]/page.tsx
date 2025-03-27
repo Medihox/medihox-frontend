@@ -7,7 +7,7 @@ interface CountryPageProps {
   params: {
     country: string;
   };
-}
+};
 
 export async function generateMetadata({ params }: CountryPageProps): Promise<Metadata> {
   const location = locations[params.country];
