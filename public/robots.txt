@@ -1,0 +1,18 @@
+User-agent: *
+Allow: /
+Allow: /sitemap.xml
+Allow: /blog/
+Allow: /features/
+Allow: /pricing/
+Allow: /about/
+Allow: /contact/
+
+# Sitemaps
+Sitemap: https://medihox.com/sitemap.xml
+
+# Disallow admin and private areas
+Disallow: /admin/
+Disallow: /private/
+Disallow: /api/
+Disallow: /_next/
+Disallow: /static/ 

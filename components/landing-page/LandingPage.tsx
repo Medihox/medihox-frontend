@@ -39,9 +39,12 @@ import PricingTier from './PricingTier';
 import EnquiryForm from './EnquiryForm';
 import MobileMenu from './MobileMenu';
 
-export default function LandingPage() {
+interface LandingPageProps {
+  location: string;
+}
+
+export default function LandingPage({ location }: LandingPageProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [location, setLocation] = useState<string>("India");
   
   // Location-specific data
   const locationData = {
@@ -174,7 +177,7 @@ export default function LandingPage() {
           stars: 5
         },
         {
-          quote: "The HIPAA compliance features give us peace of mind, and the integration with our EHR system was surprisingly smooth.",
+          quote: "The security features give us peace of mind, and the integration with our EHR system was surprisingly smooth.",
           author: "Dr. Michael Williams",
           role: "Medical Director, Pacific Health Partners, San Francisco",
           stars: 5
@@ -188,7 +191,7 @@ export default function LandingPage() {
       ],
       partners: ['Cleveland Clinic', 'Kaiser Permanente', 'Mayo Clinic', 'Johns Hopkins', 'HCA Healthcare'],
       regionBenefits: [
-        "Fully HIPAA compliant with audit logs", 
+        "Secure data handling with audit logs", 
         "Insurance verification integration", 
         "Seamless Epic and Cerner EHR connectivity", 
         "US-based cloud hosting with SOC 2 compliance",
@@ -392,7 +395,7 @@ export default function LandingPage() {
               
               <p className="text-lg md:text-xl text-muted-foreground mb-8 leading-relaxed">
                 Trusted by leading hospitals & clinics in {displayLocation} to capture, track, and convert healthcare leads into patients. 
-                Boost your medical practice's growth with our HIPAA compliant patient acquisition system.
+                Boost your medical practice's growth with our secure patient acquisition system.
               </p>
               
               <div className="flex flex-row gap-4 mb-8">
@@ -841,7 +844,7 @@ export default function LandingPage() {
                 <div className="h-12 w-12 rounded-lg bg-green-100 flex items-center justify-center text-green-600">
                   <Shield className="h-6 w-6" />
                 </div>
-                <h3 className="text-xl font-semibold">HIPAA Compliance</h3>
+                <h3 className="text-xl font-semibold">Data Security</h3>
               </div>
               
               <p className="text-muted-foreground mb-6">
@@ -1419,7 +1422,7 @@ export default function LandingPage() {
                 description="Perfect for small practices just getting started"
                 features={[
                   "Up to 2 practitioners",
-                  "10000 patient records",
+                  "7000 patient records",
                   "Basic appointment scheduling",
                   "Patient reminders",
                   "Standard support"
@@ -1431,7 +1434,7 @@ export default function LandingPage() {
             <AnimatedSection>
               <PricingTier
                 name="Professional"
-                price="20,000"
+                price="35,000"
                 description="Ideal for growing medical practices"
                 features={[
                   "Up to 10 practitioners",
@@ -1449,13 +1452,14 @@ export default function LandingPage() {
             <AnimatedSection>
               <PricingTier
                 name="Enterprise"
-                price="30,000"
+                price="45,000"
                 description="For large clinics with advanced needs"
                 features={[
                   "Unlimited practitioners",
                   "Custom workflows",
                   "Advanced analytics",
                   "API access",
+                  "Message Notifications",
                   "Custom integrations",
                   "Training sessions",
                   "Dedicated account manager"
@@ -1490,9 +1494,9 @@ export default function LandingPage() {
                 </AccordionItem>
                 
                 <AccordionItem value="item-2" className="bg-background rounded-lg border">
-                  <AccordionTrigger className="px-4">Is MediHox compliant with {location.includes("India") ? "Indian healthcare regulations" : location === "USA" ? "HIPAA" : location === "UK" ? "NHS Digital and UK GDPR" : "local healthcare regulations"}?</AccordionTrigger>
+                  <AccordionTrigger className="px-4">Is MediHox compliant with {location.includes("India") ? "Indian healthcare regulations" : location === "USA" ? "US healthcare regulations" : location === "UK" ? "NHS Digital and UK GDPR" : "local healthcare regulations"}?</AccordionTrigger>
                   <AccordionContent className="px-4 pb-4">
-                    Yes, MediHox is fully compliant with {location.includes("India") ? `all Indian healthcare data regulations and standards${location.includes("-") ? ` applicable in ${displayLocation}` : ""}` : location === "USA" ? "HIPAA requirements with end-to-end encryption and access controls" : location === "UK" ? "NHS Digital standards, UK GDPR, and the Data Protection Act 2018" : "all local healthcare regulations in your region"}. We regularly update our systems to maintain compliance with changing regulations.
+                    Yes, MediHox is fully compliant with {location.includes("India") ? `all Indian healthcare data regulations and standards${location.includes("-") ? ` applicable in ${displayLocation}` : ""}` : location === "USA" ? "US healthcare regulations with end-to-end encryption and access controls" : location === "UK" ? "NHS Digital standards, UK GDPR, and the Data Protection Act 2018" : "all local healthcare regulations in your region"}. We regularly update our systems to maintain compliance with changing regulations.
                   </AccordionContent>
                 </AccordionItem>
                 
@@ -1683,7 +1687,7 @@ export default function LandingPage() {
             <div className="flex flex-wrap justify-center gap-4">
               <Link href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</Link>
               <Link href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Terms of Service</Link>
-              <Link href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">HIPAA Compliance</Link>
+              <Link href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Data Security</Link>
             </div>
           </div>
         </div>
